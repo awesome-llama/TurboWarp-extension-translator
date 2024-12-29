@@ -39,6 +39,7 @@ class Input():
 
     @classmethod
     def from_list(cls, data):
+        """Constructor using Scratch JSON input format such as `[3, "a", [4, ""]]`"""
         if data[0] == 1:
             return cls(data[1][1])
         elif data[0] == 2:
@@ -146,18 +147,18 @@ class Block():
         # mutators?
         
 
-    def copy_parent(self, source_dict):
+    def copy_parent(self, source_dict:dict):
         """Copy parent data of a block in dict format"""
         self.parent = source_dict['parent']
         self.x = source_dict.get('x', 0)
         self.y = source_dict.get('y', 0)
 
-    def copy_next(self, source_dict):
+    def copy_next(self, source_dict:dict):
         """Copy next data of a block in dict format"""
         self.next = source_dict['next']
 
 
-    def add_input(self, input_type, key, value):
+    def add_input(self, input_type, key:str, value):
         """Register a block input with data. Data must be an input object, the contents of the object may be existing block ids, block objects (blocks to create), or literals."""
 
         if not isinstance(value, input_type):
@@ -167,7 +168,7 @@ class Block():
         
         self.inputs[key] = value
 
-    def add_field(self, key, value):
+    def add_field(self, key:str, value):
         # fields don't accept blocks
         if key in self.fields:
             raise Exception('key already exists')
@@ -202,6 +203,51 @@ class Block():
 
     def __str__(self):
         return f"{self.__class__}"
+
+
+
+class MotionGoToXY(Block):
+    def __init__(self, x:InputNumber, y:InputNumber):
+        super().__init__()
+        self.opcode = 'motion_gotoxy'
+        self.add_input(InputNumber, 'X', x)
+        self.add_input(InputNumber, 'Y', y)
+
+class MotionChangeXBy(Block):
+    def __init__(self, dx:InputNumber):
+        super().__init__()
+        self.opcode = 'motion_changexby'
+        self.add_input(InputNumber, 'DX', dx)
+
+class MotionChangeYBy(Block):
+    def __init__(self, dy:InputNumber):
+        super().__init__()
+        self.opcode = 'motion_changexby'
+        self.add_input(InputNumber, 'DY', dy)
+
+class MotionXPosition(Block):
+    def __init__(self):
+        super().__init__()
+        self.opcode = 'motion_xposition'
+
+class MotionYPosition(Block):
+    def __init__(self):
+        super().__init__()
+        self.opcode = 'motion_yposition'
+
+class MotionPointInDirection(Block):
+    def __init__(self, direction:InputAngle):
+        super().__init__()
+        self.opcode = 'motion_pointindirection'
+        self.add_input(InputAngle, 'DIRECTION', direction)
+
+class MotionDirection(Block):
+    def __init__(self):
+        super().__init__()
+        self.opcode = 'motion_direction'
+
+
+
 
 class OperatorAdd(Block):
     def __init__(self, a:InputNumber, b:InputNumber):

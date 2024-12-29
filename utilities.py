@@ -14,7 +14,7 @@ def random_id(prefix='', avoid=None):
 
 
 
-def insert_blocks(target, root_block, root_block_id):
+def insert_blocks(target:dict, root_block:blocks.Block, root_block_id:str):
     """Insert multiple blocks into a target. Accepts a root block with inputs containing blocks rather than block_ids."""
     
     def _insert(target, block, block_id):
@@ -49,7 +49,7 @@ def insert_blocks(target, root_block, root_block_id):
     _insert(target, root_block, root_block_id)
 
 
-def search_child_blocks(target, root_block_id, search_for, max_results=None):
+def search_child_blocks(target:dict, root_block_id:str, search_for:str, max_results=None):
     """Search both inputs and next stack block for id"""
 
     def _search(target, block_id, search_for, max_results, results):
@@ -76,6 +76,8 @@ def search_child_blocks(target, root_block_id, search_for, max_results=None):
     return results
 
 
-def get_procedure_definition_prototype_id(target):
-    pass
+def get_procedure_definition_prototype_id(target:dict, definition_id:str):
+    # this assumes custom_block key is [1, id]
+    return target['blocks'][definition_id]['inputs']['custom_block'][1]
+    
 

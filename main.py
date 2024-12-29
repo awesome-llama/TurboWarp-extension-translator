@@ -4,6 +4,7 @@ import utilities as utils
 from blocks import *
 
 import ext_lmsutilsblocks
+import ext_nkmoremotion
 import ext_nonameawacomparisons
 import ext_truefantommath
 import ext_utilities
@@ -39,7 +40,7 @@ for target in project_data['targets']:
                 print('warning: custom blocks with multiple return statements can not be translated')
                 continue
             
-            prototype_block = target['blocks'][block['inputs']['custom_block'][1]]
+            prototype_block = target['blocks'][utils.get_procedure_definition_prototype_id(target, block_id)]
 
             # mutation is in the prototype
             if prototype_block['mutation']['proccode'][:8] == 'TEMPLATE':
@@ -55,6 +56,9 @@ for target in project_data['targets']:
         match opcode_namespace:
             case 'lmsutilsblocks':
                 ext_lmsutilsblocks.translate_block(target, block_id)
+
+            case 'nkmoremotion':
+                ext_nkmoremotion.translate_block(target, block_id)
 
             case 'nonameawacomparisons':
                 ext_nonameawacomparisons.translate_block(target, block_id)
