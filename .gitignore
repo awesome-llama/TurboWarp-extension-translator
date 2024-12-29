@@ -1,0 +1,24 @@
+.vscode/*
+!.vscode/launch.json
+
+__pycache__
+
+# images converted to text and back
+projects/
+
+# test
+test*.py
+dump.json
+dump.sb3
+
+# Excel temp file
+~$ops.xlsx
+
+# Rhino backup
+*.3dmbak
+
+# Rhino lock file
+*.3dm.rhl
+
+# Rhino dump
+*.dmp
