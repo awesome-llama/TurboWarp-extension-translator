@@ -133,7 +133,6 @@ class Block():
         self.opcode = None
         self.next = None
         self.parent = None
-        #self.raw_inputs = {} # stores inputs as is to be converted later
         self.inputs = {}
         self.fields = {}
         self.shadow = False

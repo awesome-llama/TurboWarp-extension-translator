@@ -29,38 +29,21 @@ def random_id(prefix='', avoid=None):
     raise Exception('no vacant ids')
 
 
-# insert block would have to accept the correct inputs for any block and also handle shadow input blocks
-def insert_block(target, block, block_id):
-    # this is perfectly functional
-
-    if block_id is None:
-        new_id = random_id('new_')
-    else: 
-        new_id = block_id
-    
-    target[new_id] = block.to_dict()
-
-    
-
-
 
 def insert_blocks(target, root_block, root_block_id):
     """Insert multiple blocks into a target. Accepts a root block with inputs containing blocks rather than block_ids."""
     
     def _insert(target, block, block_id):
         """Recursively insert blocks into a target dict. Insert nested blocks first."""
-        # note the params aren't identical to insert_blocks
         
         for input_key in list(block.inputs.keys()):
             _block = block.inputs[input_key].block
             if isinstance(_block, Block):
-                # recurse then replace block object with id
-
                 # update parent of inner block
                 _block.parent = block_id
 
                 _block_id = random_id('new_')
-                _insert(target, _block, _block_id)
+                _insert(target, _block, _block_id) # recurse nested blocks first
 
                 # replace block object with id
                 block.inputs[input_key].block = _block_id
@@ -71,12 +54,7 @@ def insert_blocks(target, root_block, root_block_id):
                     # WIP, check that this is needed
                     # which input is used as next?
             
-            # add updated input
-            # note that this is unnecessary, we could use the existing attribute because it contains the same objects
-            #block.inputs[input_key] = block.raw_inputs[input_key].to_list()
-
         # current block now has block ids in its inputs, safe to convert to dict
-        
         target[block_id] = block.to_dict()
 
     ####
@@ -96,20 +74,21 @@ for target in project_data['targets']:
         
         match opcode:
             case 'truefantommath_negative_block':
-                b1 = OperatorSubtract(InputNumber('0'), InputNumber.from_list(inputs['A']))
-                b1.copy_parent(block)
-                insert_block(target['blocks'], b1, block_id)
+                new_blocks = OperatorSubtract(
+                    InputNumber('0'), 
+                    InputNumber.from_list(inputs['A'])
+                    )
+                insert_blocks(target['blocks'], new_blocks, block_id)
                 
             case 'lmsutilsblocks_negativeReporter':
-                b1 = OperatorSubtract(InputNumber('0'), InputNumber.from_list(inputs['INPUT']))
-                b1.copy_parent(block)
-                insert_block(target['blocks'], b1, block_id)
-            
+                new_blocks = OperatorSubtract(
+                    InputNumber('0'), 
+                    InputNumber.from_list(inputs['INPUT'])
+                    )
+                insert_blocks(target['blocks'], new_blocks, block_id)
             
             case 'utilities_trueBlock' | 'nonameawacomparisons_true':
-                b1 = OperatorNot(InputBoolean())
-                b1.copy_parent(block)
-                insert_block(target['blocks'], b1, block_id)
+                insert_blocks(target['blocks'], OperatorNot(InputBoolean()), block_id)
             
             case 'utilities_falseBlock' | 'nonameawacomparisons_false':
                 # actually is it better to delete the block? depends on the input, right?
@@ -117,16 +96,6 @@ for target in project_data['targets']:
                 pass
             
             case 'utilities_isLessOrEqual':
-                # old working method
-                """b1_id = random_id('new_')
-                b1 = OperatorGreaterThan(InputText.from_list(inputs['A']), InputText.from_list(inputs['B']))
-                b1.parent = block_id
-                insert_block(target['blocks'], b1, b1_id)
-
-                b2 = OperatorNot(InputBoolean(b1_id))
-                b2.copy_parent(block)
-                insert_block(target['blocks'], b2, block_id)"""
-
                 new_blocks = OperatorNot(InputBoolean(
                     OperatorGreaterThan(
                         InputText.from_list(inputs['A']), 
