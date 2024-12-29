@@ -28,8 +28,10 @@ class Input():
     
     def to_list(self):
         # this is the common format used so is default
-        if self.block_id is None: return [1, [self.enum, self.value]]
-        return [3, self.block_id, [self.enum, self.value]]
+        if isinstance(self.block, Block):
+            raise Exception('can not convert a Block to a list, it should be converted to a string block id')
+        if self.block is None: return [1, [self.enum, self.value]]
+        return [3, self.block, [self.enum, self.value]]
 
     @classmethod
     def from_list(cls, data):
@@ -41,63 +43,63 @@ class Input():
             return cls(data[2][1], data[1])
 
 class InputStack(Input):
-    def __init__(self, block_id=None):
+    def __init__(self, block=None):
         """e.g. if block nesting"""
-        self.block_id = block_id
+        self.block = block
         self.enum = 2
     
     def to_list(self):
-        return [self.enum, self.block_id]
+        return [self.enum, self.block]
 
 class InputBoolean(Input):
-    def __init__(self, block_id=None):
+    def __init__(self, block=None):
         """e.g. not block"""
-        self.block_id = block_id
+        self.block = block
         self.enum = 2
     
     def to_list(self):
-        return [self.enum, self.block_id]
+        return [self.enum, self.block]
 
 class InputNumber(Input):
-    def __init__(self, value='', block_id=None): # 4 is any number
+    def __init__(self, value='', block=None): # 4 is any number
         """e.g. math operator"""
         self.value = value
-        self.block_id = block_id
+        self.block = block
         self.enum = 4
 
 
 class InputPositiveNumber(Input):
-    def __init__(self, value='', block_id=None): 
+    def __init__(self, value='', block=None): 
         """e.g. seconds, (oddly) not size"""
         self.value = value
-        self.block_id = block_id
+        self.block = block
         self.enum = 5
 
 class InputPositiveInteger(Input):
-    def __init__(self, value='', block_id=None): 
+    def __init__(self, value='', block=None): 
         """e.g. repeat count"""
         self.value = value
-        self.block_id = block_id
+        self.block = block
         self.enum = 6
 
 class InputInteger(Input):
-    def __init__(self, value='', block_id=None): 
+    def __init__(self, value='', block=None): 
         """e.g. layer, (oddly) list item but not letter number"""
         self.value = value
-        self.block_id = block_id
+        self.block = block
         self.enum = 7
 
 class InputAngle(Input):
-    def __init__(self, value='', block_id=None): 
+    def __init__(self, value='', block=None): 
         """e.g. direction"""
         self.value = value
-        self.block_id = block_id
+        self.block = block
         self.enum = 8
 
 class InputColor(Input):
-    def __init__(self, value='#000000', block_id=None): 
+    def __init__(self, value='#000000', block=None): 
         self.value = str(value)
-        self.block_id = block_id
+        self.block = block
         self.enum = 9
     
     def to_list(self):
@@ -106,16 +108,16 @@ class InputColor(Input):
         return super().to_list()
 
 class InputText(Input):
-    def __init__(self, value='', block_id=None): 
+    def __init__(self, value='', block=None): 
         """e.g. say block"""
         self.value = str(value)
-        self.block_id = block_id
+        self.block = block
         self.enum = 10
 
 class InputBroadcast(Input):
-    def __init__(self, value='', block_id=None): 
+    def __init__(self, value='', block=None): 
         self.value = str(value)
-        self.block_id = block_id
+        self.block = block
         self.enum = 11
 
 # if block is actually a variable reporter, it should instead be a list [12, var name, var id]
@@ -131,16 +133,15 @@ class Block():
         self.opcode = None
         self.next = None
         self.parent = None
-        self.raw_inputs = {} # stores inputs as is to be converted later
+        #self.raw_inputs = {} # stores inputs as is to be converted later
         self.inputs = {}
         self.fields = {}
         self.shadow = False
-        #self.topLevel = False # depends on parent
+        #self.topLevel = False # depends on parent being None
         self.x = 0
         self.y = 0
         # mutators?
-        #self.additional_blocks = [] # this is for dropdowns and other special blocks, used only by some. They should be block objects too.
-        # to_dict ignores them 
+        
 
     def copy_parent(self, source_dict):
         """Copy parent data of a block in dict format"""
@@ -154,25 +155,34 @@ class Block():
 
 
     def add_input(self, input_type, key, value):
-        """Add an input to the block"""
+        """Register a block input with data. Data must be an input object, the contents of the object may be existing block ids, block objects (blocks to create), or literals."""
+
         if not isinstance(value, input_type):
             raise Exception('input is not of the correct class')
         if key in self.inputs:
             raise Exception('key already exists')
-        # the check happens at to_list for block handling
-        self.inputs[key] = value.to_list()
+        
+        self.inputs[key] = value
 
     def add_field(self, input_type, key, value):
         # fields don't accept blocks
         raise NotImplementedError
 
     def to_dict(self):
-        # block id is handled outside of this method
+        """Create a dict representation of a block. The id of itself is not handled here."""
+
+        converted_inputs = {}
+        for key, input in self.inputs.items():
+            if isinstance(input.block, Block):
+                raise Exception(f'input contains a block (so cannot be converted to a dict): {input.block}')
+            
+            converted_inputs[key] = input.to_list()
+
         output = {
             "opcode": self.opcode,
             "next": self.next,
             "parent": self.parent,
-            "inputs": self.inputs,
+            "inputs": converted_inputs,
             "fields": self.fields,
             "shadow": self.shadow,
             "topLevel": self.parent is None
@@ -183,6 +193,9 @@ class Block():
             output['y'] = self.y
 
         return output
+
+    def __str__(self):
+        return f"{self.__class__}"
 
 class OperatorAdd(Block):
     def __init__(self, a:InputNumber, b:InputNumber):

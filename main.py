@@ -31,7 +31,7 @@ def random_id(prefix='', avoid=None):
 
 # insert block would have to accept the correct inputs for any block and also handle shadow input blocks
 def insert_block(target, block, block_id):
-    # TODO error handling
+    # this is perfectly functional
 
     if block_id is None:
         new_id = random_id('new_')
@@ -40,25 +40,51 @@ def insert_block(target, block, block_id):
     
     target[new_id] = block.to_dict()
 
-    #for additional_block in block.additional_blocks:
-    #    insert_block(target, additional_block)
     
-#def _insert_from_inputs(target, block)
+
 
 
 def insert_blocks(target, root_block, root_block_id):
     """Insert multiple blocks into a target. Accepts a root block with inputs containing blocks rather than block_ids."""
     
-    for input_key in root_block['inputs']:
-        if isinstance(root_block['inputs'][input_key].block_id, Block):
-            pass
+    def _insert(target, block, block_id):
+        """Recursively insert blocks into a target dict. Insert nested blocks first."""
+        # note the params aren't identical to insert_blocks
+        
+        for input_key in list(block.inputs.keys()):
+            _block = block.inputs[input_key].block
+            if isinstance(_block, Block):
+                # recurse then replace block object with id
 
-    # replace the existing block 
-    target[root_block_id] = root_block.to_dict()
-    # make sure the inputs and fields don't contain more blocks
+                # update parent of inner block
+                _block.parent = block_id
 
-    #for additional_block in block.additional_blocks:
-    #    insert_block(target, additional_block)
+                _block_id = random_id('new_')
+                _insert(target, _block, _block_id)
+
+                # replace block object with id
+                block.inputs[input_key].block = _block_id
+
+                if isinstance(block.inputs[input_key], InputStack):
+                    pass
+                    # is a stack block, set the current block next
+                    # WIP, check that this is needed
+                    # which input is used as next?
+            
+            # add updated input
+            # note that this is unnecessary, we could use the existing attribute because it contains the same objects
+            #block.inputs[input_key] = block.raw_inputs[input_key].to_list()
+
+        # current block now has block ids in its inputs, safe to convert to dict
+        
+        target[block_id] = block.to_dict()
+
+    ####
+    # copy parent data from original unreplaced block
+    root_block.copy_parent(target[root_block_id])
+    _insert(target, root_block, root_block_id)
+
+
     
 
 for target in project_data['targets']:
@@ -92,31 +118,22 @@ for target in project_data['targets']:
             
             case 'utilities_isLessOrEqual':
                 # old working method
-                b1_id = random_id('new_')
+                """b1_id = random_id('new_')
                 b1 = OperatorGreaterThan(InputText.from_list(inputs['A']), InputText.from_list(inputs['B']))
                 b1.parent = block_id
                 insert_block(target['blocks'], b1, b1_id)
 
                 b2 = OperatorNot(InputBoolean(b1_id))
                 b2.copy_parent(block)
-                insert_block(target['blocks'], b2, block_id)
+                insert_block(target['blocks'], b2, block_id)"""
 
-                # TODO make this simpler
-                # insert block is confusing
-                # perhaps nest blocks in input rather than id? too complicated?
-                # the input stores a block object and that gets converted later
-                # but what about the needed parent?
-                # child is solved
-
-                # new idea: construct a tree of ids, these are then just used to correct the parents
-                """
                 new_blocks = OperatorNot(InputBoolean(
                     OperatorGreaterThan(
                         InputText.from_list(inputs['A']), 
                         InputText.from_list(inputs['B'])
                         )
                     ))
-                insert_blocks(target['blocks'], new_blocks, block_id)"""
+                insert_blocks(target['blocks'], new_blocks, block_id)
 
 
 
