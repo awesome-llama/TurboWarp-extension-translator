@@ -32,6 +32,7 @@ class Input():
     
     def to_list(self):
         # this is the common format used so is default
+        # TODO account for shadow blocks
         if isinstance(self.block, Block):
             raise Exception('can not convert a Block to a list, it should be converted to a string block id')
         if self.block is None: return [1, [self.enum, self.value]]
@@ -40,6 +41,9 @@ class Input():
     @classmethod
     def from_list(cls, data):
         """Constructor using Scratch JSON input format such as `[3, "a", [4, ""]]`"""
+        if data is None: 
+            # no data (such as a fallback when no input is found), use default.
+            return cls()
         if data[0] == 1:
             return cls(data[1][1])
         elif data[0] == 2:

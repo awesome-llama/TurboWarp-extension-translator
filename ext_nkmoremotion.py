@@ -88,33 +88,31 @@ def translate_block(target, block_id):
             insert_helper(new_blocks)
 
         case 'nkmoremotion_distanceto':
-            insert_helper(
-                OperatorMathOp(
-                    'sqrt',
-                    InputNumber(block=OperatorAdd(
-                        InputNumber(block=OperatorMultiply(
-                            InputNumber(block=OperatorSubtract(
-                                InputNumber.from_list(inputs['X']),
-                                InputNumber(block=MotionXPosition()),
-                            )),
-                            InputNumber(block=OperatorSubtract(
-                                InputNumber.from_list(inputs['X']),
-                                InputNumber(block=MotionXPosition()),
-                            )),
+            insert_helper(OperatorMathOp(
+                'sqrt',
+                InputNumber(block=OperatorAdd(
+                    InputNumber(block=OperatorMultiply(
+                        InputNumber(block=OperatorSubtract(
+                            InputNumber.from_list(inputs['X']),
+                            InputNumber(block=MotionXPosition()),
                         )),
-                        InputNumber(block=OperatorMultiply(
-                            InputNumber(block=OperatorSubtract(
-                                InputNumber.from_list(inputs['Y']),
-                                InputNumber(block=MotionYPosition()),
-                            )),
-                            InputNumber(block=OperatorSubtract(
-                                InputNumber.from_list(inputs['Y']),
-                                InputNumber(block=MotionYPosition()),
-                            )),
+                        InputNumber(block=OperatorSubtract(
+                            InputNumber.from_list(inputs['X']),
+                            InputNumber(block=MotionXPosition()),
                         )),
                     )),
-                )
-            )
+                    InputNumber(block=OperatorMultiply(
+                        InputNumber(block=OperatorSubtract(
+                            InputNumber.from_list(inputs['Y']),
+                            InputNumber(block=MotionYPosition()),
+                        )),
+                        InputNumber(block=OperatorSubtract(
+                            InputNumber.from_list(inputs['Y']),
+                            InputNumber(block=MotionYPosition()),
+                        )),
+                    )),
+                )),
+            ))
 
         case _:
             print(f'opcode not converted: {block['opcode']}')
