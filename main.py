@@ -71,39 +71,76 @@ for target in project_data['targets']:
         block = target['blocks'][block_id]
         opcode = block['opcode']
         inputs = block['inputs']
+
+        def insert_helper(new_blocks):
+            """Insert a block using current scoped variables"""
+            insert_blocks(target['blocks'], new_blocks, block_id)
         
         match opcode:
             case 'truefantommath_negative_block':
-                new_blocks = OperatorSubtract(
-                    InputNumber('0'), 
-                    InputNumber.from_list(inputs['A'])
-                    )
-                insert_blocks(target['blocks'], new_blocks, block_id)
+                
+                insert_helper(
+                    OperatorSubtract(
+                        InputNumber('0'), 
+                        InputNumber.from_list(inputs['A'])
+                    ))
                 
             case 'lmsutilsblocks_negativeReporter':
-                new_blocks = OperatorSubtract(
-                    InputNumber('0'), 
-                    InputNumber.from_list(inputs['INPUT'])
-                    )
-                insert_blocks(target['blocks'], new_blocks, block_id)
+                insert_helper(
+                    OperatorSubtract(
+                        InputNumber('0'), 
+                        InputNumber.from_list(inputs['INPUT'])
+                    ))
             
             case 'utilities_trueBlock' | 'nonameawacomparisons_true':
-                insert_blocks(target['blocks'], OperatorNot(InputBoolean()), block_id)
+                insert_helper(OperatorNot(InputBoolean()))
             
             case 'utilities_falseBlock' | 'nonameawacomparisons_false':
-                # actually is it better to delete the block? depends on the input, right?
-                #block['opcode'] = 'operator_and'
-                pass
-            
+                # TODO delete the block. if input is not a boolean, replace it with a false value.
+                if block['topLevel']:
+                    target['blocks'].pop(block_id) # top level can be deleted safely
+                
             case 'utilities_isLessOrEqual':
-                new_blocks = OperatorNot(InputBoolean(
+                insert_helper(
+                    OperatorNot(InputBoolean(
                     OperatorGreaterThan(
                         InputText.from_list(inputs['A']), 
                         InputText.from_list(inputs['B'])
                         )
-                    ))
-                insert_blocks(target['blocks'], new_blocks, block_id)
+                    )))
+            
+            case 'utilities_isMoreOrEqual':
+                insert_helper(
+                    OperatorNot(InputBoolean(
+                    OperatorLessThan(
+                        InputText.from_list(inputs['A']), 
+                        InputText.from_list(inputs['B'])
+                        )
+                    )))
 
+            case 'utilities_exponent':
+                insert_helper(OperatorMathOp(
+                    'e ^',
+                    InputNumber(block=OperatorMultiply(
+                        InputNumber(block=OperatorMathOp(
+                            'ln',
+                            InputNumber.from_list(inputs['A']),
+                        )),
+                        InputNumber.from_list(inputs['B']),
+                    ))
+                ))
+
+            case 'utilities_currentMillisecond':
+                insert_helper(
+                    OperatorMod(
+                        InputNumber(block=OperatorRound(
+                            InputNumber(block=OperatorMultiply(
+                                InputNumber(block=SensingDaysSince2000()),
+                                InputNumber('86400000')
+                            ))
+                        )),
+                        InputNumber('1000')
+                    ))
 
 
 

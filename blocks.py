@@ -22,6 +22,10 @@ import re
 """
 
 
+KEY_OPTIONS = ['space','up arrow','down arrow','right arrow','left arrow','enter','shift','any','!','"','#','$','%','&','\'','(',')','*','+',',','-','.','/','0','1','2','3','4','5','6','7','8','9',':',';','<','=','>','?','@','[','\\',']','^','_','`','a','b','c','d','e','f','g','h','i','j','k','l','m','n','o','p','q','r','s','t','u','v','w','x','y','z','{','|','}','~']
+EFFECTS = ['COLOR', 'FISHEYE', 'WHIRL', 'PIXELATE', 'MOSAIC', 'BRIGHTNESS', 'GHOST']
+SOUND_EFFECTS = ['PITCH', 'PAN']
+
 class Input():
     def __init__(self):
         pass
@@ -163,9 +167,12 @@ class Block():
         
         self.inputs[key] = value
 
-    def add_field(self, input_type, key, value):
+    def add_field(self, key, value):
         # fields don't accept blocks
-        raise NotImplementedError
+        if key in self.fields:
+            raise Exception('key already exists')
+
+        self.fields[key] = [value, None] # no idea what the second item is
 
     def to_dict(self):
         """Create a dict representation of a block. The id of itself is not handled here."""
@@ -210,6 +217,54 @@ class OperatorSubtract(Block):
         self.add_input(InputNumber, 'NUM1', a)
         self.add_input(InputNumber, 'NUM2', b)
 
+class OperatorMultiply(Block):
+    def __init__(self, a:InputNumber, b:InputNumber):
+        super().__init__()
+        self.opcode = 'operator_multiply'
+        self.add_input(InputNumber, 'NUM1', a)
+        self.add_input(InputNumber, 'NUM2', b)
+
+class OperatorDivide(Block):
+    def __init__(self, a:InputNumber, b:InputNumber):
+        super().__init__()
+        self.opcode = 'operator_divide'
+        self.add_input(InputNumber, 'NUM1', a)
+        self.add_input(InputNumber, 'NUM2', b)
+
+class OperatorMod(Block):
+    def __init__(self, a:InputNumber, b:InputNumber):
+        super().__init__()
+        self.opcode = 'operator_mod'
+        self.add_input(InputNumber, 'NUM1', a)
+        self.add_input(InputNumber, 'NUM2', b)
+
+class OperatorRound(Block):
+    def __init__(self, a:InputNumber):
+        super().__init__()
+        self.opcode = 'operator_round'
+        self.add_input(InputNumber, 'NUM', a)
+
+class OperatorEquals(Block):
+    def __init__(self, a:InputText, b:InputText):
+        super().__init__()
+        self.opcode = 'operator_equals'
+        self.add_input(InputText, 'OPERAND1', a)
+        self.add_input(InputText, 'OPERAND2', b)
+
+class OperatorAnd(Block):
+    def __init__(self, a:InputBoolean, b:InputBoolean):
+        super().__init__()
+        self.opcode = 'operator_and'
+        self.add_input(InputBoolean, 'OPERAND1', a)
+        self.add_input(InputBoolean, 'OPERAND2', b)
+
+class OperatorOr(Block):
+    def __init__(self, a:InputBoolean, b:InputBoolean):
+        super().__init__()
+        self.opcode = 'operator_or'
+        self.add_input(InputBoolean, 'OPERAND1', a)
+        self.add_input(InputBoolean, 'OPERAND2', b)
+
 class OperatorNot(Block):
     def __init__(self, a:InputBoolean):
         super().__init__()
@@ -229,3 +284,19 @@ class OperatorGreaterThan(Block):
         self.opcode = 'operator_gt'
         self.add_input(InputText, 'OPERAND1', a)
         self.add_input(InputText, 'OPERAND2', b)
+
+class OperatorMathOp(Block):
+    def __init__(self, op, num:InputNumber):
+        super().__init__()
+        self.opcode = 'operator_mathop'
+        #self.add_input(InputBoolean, 'OPERAND1', a)
+        if op not in ['abs','floor','ceiling','sqrt','sin','cos','tan','asin','acos','atan','ln','log','e ^','10 ^']: raise Exception(f'unknown math op {op}')
+        self.add_field('OPERATOR', op)
+        self.add_input(InputNumber, 'NUM', num)
+
+
+
+class SensingDaysSince2000(Block):
+    def __init__(self):
+        super().__init__()
+        self.opcode = 'sensing_dayssince2000'
