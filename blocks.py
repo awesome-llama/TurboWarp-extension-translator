@@ -1,128 +1,125 @@
-
 """File containing all the blocks"""
 import re
 
 # https://github.com/scratchfoundation/scratch-parser/blob/d48cf549388f2c0fb7f330e8942c7b299ef4f9a9/lib/sb3_definitions.json
 # https://github.com/scratchfoundation/scratch-vm/blob/7419b10eb766574c84b9f33a422614b5eb1fd877/src/serialization/sb3.js#L62
-"""
-'none': [1, None], # ??
-'substack': [2, None], # substack and boolean are separate because the block handling is different
-'boolean': [2, None],
-'number': [4, '0'],
-'positive_number': [5, '0'], # time
-'positive_integer': [6, ''], # count
-'layer': [7, ''], # layers
-'list_item': [7, ''],
-'direction': [8, '90'], # set dir
-'color': [9, '#000000'],
-'text': [10, ''],
-'broadcast': [11, None],
-'variable_reporter': [12, None],
-'list_reporter': [13, None],
-"""
 
 KEY_OPTIONS = ['space','up arrow','down arrow','right arrow','left arrow','enter','shift','any','!','"','#','$','%','&','\'','(',')','*','+',',','-','.','/','0','1','2','3','4','5','6','7','8','9',':',';','<','=','>','?','@','[','\\',']','^','_','`','a','b','c','d','e','f','g','h','i','j','k','l','m','n','o','p','q','r','s','t','u','v','w','x','y','z','{','|','}','~']
 EFFECTS = ['COLOR', 'FISHEYE', 'WHIRL', 'PIXELATE', 'MOSAIC', 'BRIGHTNESS', 'GHOST']
 SOUND_EFFECTS = ['PITCH', 'PAN']
 
 class Input():
-    def __init__(self):
-        raise Exception('Do not create an instance of this class, use a child such as InputNumber()')
+    def __init__(self, shadow_enum, shadow_value, block=None):
+        self.shadow_enum = shadow_enum # None if shadow value references a shadow block (not user input)
+        self.shadow_value = shadow_value # allowed to be any value
+        self.block = block # the block that can be inserted manually
     
     def to_list(self):
-        # this is the common format used so is default
+        """Convert to list format such as `[3, "a", [4, ""]]`"""
         if isinstance(self.block, Block):
-            raise Exception('cannot convert a Block to a list, it should be converted to a string block id')
+            raise Exception('block is a Block, it must be converted into a string ID first')
+        if isinstance(self.shadow_value, Block):
+            raise Exception('shadow_value is a Block, it must be converted into a string ID first')
         
-        if self.block is None: return [1, [self.enum, self.value]]
-        return [3, self.block, [self.enum, self.value]]
+        if self.shadow_enum is None: 
+            shadow_combined = self.shadow_value # None means block reference
+        else:
+            shadow_combined = [self.shadow_enum, self.shadow_value] # literal value with enum specifying type
+
+        if shadow_combined is None: 
+            return [2, self.block] # inserted block but no shadow (empty bool input)
+        if self.block is None: 
+            return [1, shadow_combined] # no block, use shadow only (shadow block or user input)
+        
+        if self.shadow_enum is not None and self.shadow_value is None:
+            raise Exception('non-null value is required for non-block shadows')
+
+        return [3, self.block, shadow_combined] # inserted block with shadow hidden underneath
+
+    def __str__(self):
+        return f"{self.__class__.__name__}({self.shadow_enum} {self.shadow_value} {self.block})"
 
     @classmethod
     def from_list(cls, data):
         """Constructor using Scratch JSON input format such as `[3, "a", [4, ""]]`"""
+        #raise DeprecationWarning()
         if data is None: 
-            # no data (such as a fallback when no input is found), use default.
-            return cls()
-        if data[0] == 1:
-            if data[1] is None: return cls() # in the case of an empty input
-            return cls(data[1][1])
-        elif data[0] == 2:
-            return cls(block=data[1])
-        elif data[0] == 3:
-            return cls(data[2][1], data[1])
+            return cls() # no data (such as a fallback when no input is found), use default.
+
+        parsed_input = parse_list(data)
+        
+        # needs a safe conversion to the correct type
+        new_input_object = cls()
+
+        # enum not needed to be manually set?
+        if not(new_input_object.shadow_enum is not None and parsed_input.shadow_value is None):
+            # do not copy if the enum is not none AND shadow value is none
+            new_input_object.shadow_value = parsed_input.shadow_value
+        new_input_object.block = parsed_input.block
+        return new_input_object
+
 
 class InputStack(Input):
-    def __init__(self, block=None):
+    def __init__(self, shadow_value=None, block=None):
         """e.g. if block nesting"""
-        self.value = None
+        self.shadow_enum = None
+        self.shadow_value = shadow_value
         self.block = block
-        self.enum = 2
-    
-    def to_list(self):
-        return [self.enum, self.block]
 
 class InputBoolean(Input):
-    def __init__(self, block=None):
+    def __init__(self, shadow_value=None, block=None):
         """e.g. not block"""
-        self.value = None
+        self.shadow_enum = None
+        self.shadow_value = shadow_value
         self.block = block
-        self.enum = 2
-    
-    def to_list(self):
-        return [self.enum, self.block]
 
 class InputReporter(Input):
-    def __init__(self, shadow_value, block=None):
+    def __init__(self, shadow_value=None, block=None):
         """specifically for inputs with shadow dropdown such as key press"""
-        self.value = shadow_value
+        self.shadow_enum = None
+        self.shadow_value = shadow_value
         self.block = block
-        self.enum = None
-    
-    def to_list(self):
-        if self.block is None: return [1, self.value]
-        return [3, self.block, self.value]
 
 class InputNumber(Input):
     def __init__(self, value='', block=None): # 4 is any number
         """e.g. math operator"""
-        self.value = value
+        self.shadow_enum = 4
+        self.shadow_value = value
         self.block = block
-        self.enum = 4
-
 
 class InputPositiveNumber(Input):
     def __init__(self, value='', block=None): 
         """e.g. seconds, (oddly) not size"""
-        self.value = value
+        self.shadow_enum = 5
+        self.shadow_value = value
         self.block = block
-        self.enum = 5
 
 class InputPositiveInteger(Input):
     def __init__(self, value='', block=None): 
         """e.g. repeat count"""
-        self.value = value
+        self.shadow_enum = 6
+        self.shadow_value = value
         self.block = block
-        self.enum = 6
 
 class InputInteger(Input):
     def __init__(self, value='', block=None): 
         """e.g. layer, (oddly) list item but not letter number"""
-        self.value = value
+        self.shadow_enum = 7
+        self.shadow_value = value
         self.block = block
-        self.enum = 7
 
 class InputAngle(Input):
     def __init__(self, value='', block=None): 
         """e.g. direction"""
-        self.value = value
+        self.shadow_enum = 8
+        self.shadow_value = value
         self.block = block
-        self.enum = 8
 
 class InputColor(Input):
     def __init__(self, value='#000000', block=None): 
-        self.value = str(value)
+        self.shadow_enum = 9
+        self.shadow_value = str(value)
         self.block = block
-        self.enum = 9
     
     def to_list(self):
         if re.fullmatch(r"^#[a-fA-F0-9]{6}$", self.value) is None:
@@ -132,22 +129,22 @@ class InputColor(Input):
 class InputText(Input):
     def __init__(self, value='', block=None): 
         """e.g. say block"""
-        self.value = str(value)
+        self.shadow_enum = 10
+        self.shadow_value = str(value)
         self.block = block
-        self.enum = 10
 
 class InputBroadcast(Input):
     def __init__(self, value='', block=None): 
-        self.value = str(value)
+        self.shadow_enum = 11
+        self.shadow_value = str(value)
         self.block = block
-        self.enum = 11
 
 # if block is actually a variable reporter, it should instead be a list [12, var name, var id]
 # list reporter is 13
 # but this can be ignored and treated as another block id
 
 
-input_classes = {
+INPUT_CLASSES = {
     4: InputNumber,
     5: InputPositiveNumber,
     6: InputPositiveInteger,
@@ -158,6 +155,39 @@ input_classes = {
     11: InputBroadcast,
 }
 
+
+def parse_list(data:list, expected_enum='any') -> Input:
+    """Convert a Scratch JSON input such as `[3, "a", [4, ""]]` to Input object"""
+    """
+    1 = use the shadow data, ie. the stuff typed directly into the block
+    2 = nothing in the input, most of these are boolean inputs but it applies to all input types
+    3 = theres a shadow that could have data, but something else (ie. a variable) is on top of it and should be used
+    """
+    shadow = None
+    block = None
+    if data[0] == 1: # use shadow
+        shadow = data[1]
+    elif data[0] == 2: # input without a shadow
+        block = data[1] 
+    elif data[0] == 3: # block and shadow
+        block = data[1]
+        shadow = data[2]
+    else:
+        raise Exception('unknown id')
+    
+    if shadow is None:
+        shadow_enum = None
+        shadow_value = None
+    else:
+        shadow_enum = shadow[0]
+        shadow_value = shadow[1]
+    
+    # Construct relevant input:
+    if shadow_enum in INPUT_CLASSES:
+        return INPUT_CLASSES[shadow_enum](shadow_value, block) # constructor of a specific shadow type
+    
+    return Input(shadow_enum, shadow_value, block) # generic block input
+    
 
 
 class Block():
@@ -190,7 +220,7 @@ class Block():
         """Register a block input with data. Data must be an input object, the contents of the object may be existing block ids, block objects (blocks to create), or literals."""
 
         if not isinstance(value, input_type):
-            raise Exception('input is not of the correct class')
+            raise Exception(f'input {value} is not of the correct class {input_type}')
         if key in self.inputs:
             raise Exception('key already exists')
         
@@ -410,7 +440,6 @@ class OperatorMathOp(Block):
     def __init__(self, op, num:InputNumber):
         super().__init__()
         self.opcode = 'operator_mathop'
-        #self.add_input(InputBoolean, 'OPERAND1', a)
         if op not in ['abs','floor','ceiling','sqrt','sin','cos','tan','asin','acos','atan','ln','log','e ^','10 ^']: raise Exception(f'unknown math op {op}')
         self.add_field('OPERATOR', op)
         self.add_input(InputNumber, 'NUM', num)

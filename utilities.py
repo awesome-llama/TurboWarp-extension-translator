@@ -1,6 +1,8 @@
 import random
 import blocks
 
+random.seed(0)
+
 def random_id(prefix='', avoid=None):
     """Generate a random id."""
     
@@ -22,7 +24,7 @@ def insert_blocks(target:dict, root_block:blocks.Block, root_block_id:str):
         
         for input_key in list(block.inputs.keys()):
             # value (may be a shadow block)
-            _value = block.inputs[input_key].value
+            _value = block.inputs[input_key].shadow_value
             if isinstance(_value, blocks.Block):
                 # update parent of inner block
                 _value.parent = block_id
@@ -31,7 +33,7 @@ def insert_blocks(target:dict, root_block:blocks.Block, root_block_id:str):
                 _insert(target, _value, _value_id) # recurse nested blocks first
 
                 # replace block object with id
-                block.inputs[input_key].value = _value_id
+                block.inputs[input_key].shadow_value = _value_id
 
             # block manually inserted into input
             _block = block.inputs[input_key].block
@@ -62,7 +64,7 @@ def remove_constant_block(target:dict, block_id:str, value):
     # note this depends on input type. 
     # all bools are left empty because there's no alternative? also note that shadow blocks exist, these should be left
     # requires searching all inputs of the parent to find the block
-
+    
     parent_block_id = target['blocks'][block_id]['parent']
     target['blocks'].pop(block_id) # delete block
 
@@ -88,7 +90,7 @@ def remove_constant_block(target:dict, block_id:str, value):
     
 def remove_passthrough_block(target:dict, block_id:str, child_block_id:str):
     """Remove a block that passed through a value, it has 1 input and 1 output of the same type."""
-
+    raise NotImplementedError('')
     parent_block_id = target['blocks'][block_id]['parent']
     parent_block = target['blocks'][parent_block_id]
     
