@@ -28,13 +28,13 @@ SOUND_EFFECTS = ['PITCH', 'PAN']
 
 class Input():
     def __init__(self):
-        pass
+        raise Exception('Do not create an instance of this class, use a child such as InputNumber()')
     
     def to_list(self):
         # this is the common format used so is default
-        # TODO account for shadow blocks
         if isinstance(self.block, Block):
-            raise Exception('can not convert a Block to a list, it should be converted to a string block id')
+            raise Exception('cannot convert a Block to a list, it should be converted to a string block id')
+        
         if self.block is None: return [1, [self.enum, self.value]]
         return [3, self.block, [self.enum, self.value]]
 
@@ -45,15 +45,17 @@ class Input():
             # no data (such as a fallback when no input is found), use default.
             return cls()
         if data[0] == 1:
+            if data[1] is None: return cls() # in the case of an empty input
             return cls(data[1][1])
         elif data[0] == 2:
-            return cls(data[1])
+            return cls(block=data[1])
         elif data[0] == 3:
             return cls(data[2][1], data[1])
 
 class InputStack(Input):
     def __init__(self, block=None):
         """e.g. if block nesting"""
+        self.value = None
         self.block = block
         self.enum = 2
     
@@ -63,11 +65,23 @@ class InputStack(Input):
 class InputBoolean(Input):
     def __init__(self, block=None):
         """e.g. not block"""
+        self.value = None
         self.block = block
         self.enum = 2
     
     def to_list(self):
         return [self.enum, self.block]
+
+class InputReporter(Input):
+    def __init__(self, shadow_value, block=None):
+        """specifically for inputs with shadow dropdown such as key press"""
+        self.value = shadow_value
+        self.block = block
+        self.enum = None
+    
+    def to_list(self):
+        if self.block is None: return [1, self.value]
+        return [3, self.block, self.value]
 
 class InputNumber(Input):
     def __init__(self, value='', block=None): # 4 is any number
@@ -138,7 +152,6 @@ class InputBroadcast(Input):
 class Block():
     """Base block class"""
     def __init__(self):
-        # self.shape = None # custom val for operator/stack?
         self.opcode = None
         self.next = None
         self.parent = None
@@ -210,6 +223,23 @@ class Block():
 
 
 
+
+class EventWhenKeyPressed(Block):
+    def __init__(self, keyoption:str):
+        super().__init__()
+        self.opcode = 'event_whenkeypressed'
+        if keyoption not in KEY_OPTIONS: raise Exception(f'unknown key {keyoption}')
+        self.add_field('KEY_OPTION', keyoption)
+
+class EventWhenGreaterThan(Block):
+    def __init__(self, variable:str, value:InputNumber):
+        super().__init__()
+        self.opcode = 'event_whengreaterthan'
+        if variable not in ['LOUDNESS', 'TIMER']: raise Exception(f'unknown variable {variable}')
+        self.add_field('WHENGREATERTHANMENU', variable)
+        self.add_input(InputNumber, 'VALUE', value)
+
+
 class MotionGoToXY(Block):
     def __init__(self, x:InputNumber, y:InputNumber):
         super().__init__()
@@ -251,6 +281,26 @@ class MotionDirection(Block):
         self.opcode = 'motion_direction'
 
 
+
+class SensingKeyPressed(Block):
+    def __init__(self, a:InputReporter):
+        super().__init__()
+        self.opcode = 'sensing_keypressed'
+        self.add_input(InputReporter, 'KEY_OPTION', a)
+
+class SensingKeyOptions(Block):
+    def __init__(self, keyoption:str):
+        super().__init__()
+        if keyoption not in KEY_OPTIONS: raise Exception(f'unknown key {keyoption}')
+        self.opcode = 'sensing_keyoptions'
+        self.shadow = True
+        self.add_field('KEY_OPTION', keyoption)
+
+
+class SensingDaysSince2000(Block):
+    def __init__(self):
+        super().__init__()
+        self.opcode = 'sensing_dayssince2000'
 
 
 class OperatorAdd(Block):
@@ -294,6 +344,20 @@ class OperatorRound(Block):
         self.opcode = 'operator_round'
         self.add_input(InputNumber, 'NUM', a)
 
+class OperatorLessThan(Block):
+    def __init__(self, a:InputText, b:InputText):
+        super().__init__()
+        self.opcode = 'operator_lt'
+        self.add_input(InputText, 'OPERAND1', a)
+        self.add_input(InputText, 'OPERAND2', b)
+
+class OperatorGreaterThan(Block):
+    def __init__(self, a:InputText, b:InputText):
+        super().__init__()
+        self.opcode = 'operator_gt'
+        self.add_input(InputText, 'OPERAND1', a)
+        self.add_input(InputText, 'OPERAND2', b)
+
 class OperatorEquals(Block):
     def __init__(self, a:InputText, b:InputText):
         super().__init__()
@@ -321,19 +385,12 @@ class OperatorNot(Block):
         self.opcode = 'operator_not'
         self.add_input(InputBoolean, 'OPERAND', a)
 
-class OperatorLessThan(Block):
+class OperatorJoin(Block):
     def __init__(self, a:InputText, b:InputText):
         super().__init__()
-        self.opcode = 'operator_lt'
-        self.add_input(InputText, 'OPERAND1', a)
-        self.add_input(InputText, 'OPERAND2', b)
-
-class OperatorGreaterThan(Block):
-    def __init__(self, a:InputText, b:InputText):
-        super().__init__()
-        self.opcode = 'operator_gt'
-        self.add_input(InputText, 'OPERAND1', a)
-        self.add_input(InputText, 'OPERAND2', b)
+        self.opcode = 'operator_join'
+        self.add_input(InputText, 'STRING1', a)
+        self.add_input(InputText, 'STRING2', b)
 
 class OperatorMathOp(Block):
     def __init__(self, op, num:InputNumber):
@@ -345,8 +402,3 @@ class OperatorMathOp(Block):
         self.add_input(InputNumber, 'NUM', num)
 
 
-
-class SensingDaysSince2000(Block):
-    def __init__(self):
-        super().__init__()
-        self.opcode = 'sensing_dayssince2000'

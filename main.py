@@ -12,6 +12,7 @@ import ext_utilities
 
 PROJECT = 'projects/all_blocks.sb3'
 #PROJECT = 'projects/Project lteq.sb3'
+#PROJECT = 'projects/when hat.sb3'
 
 project_archive = zipfile.ZipFile(PROJECT, 'r')
 project_data = json.loads(project_archive.read('project.json'))
@@ -74,11 +75,12 @@ for target in project_data['targets']:
 
         #raise Exception('unknown opcode')
 
-# Now replace custom blocks
-print(template_procedures)
-for block_id in template_procedures:
-    #if 'procedures_call'
-    print(block_id)
+    # Now replace custom blocks
+    print('templates:', template_procedures)
+    for block_id in template_procedures:
+        #if 'procedures_call'
+        pass
+        #print(block_id)
 
 with open('dump.sb3', 'w', encoding='utf-8') as f:
     f.write(json.dumps(project_data, ensure_ascii=False, indent=1))

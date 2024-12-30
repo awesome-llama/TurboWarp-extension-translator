@@ -21,6 +21,19 @@ def insert_blocks(target:dict, root_block:blocks.Block, root_block_id:str):
         """Recursively insert blocks into a target dict. Insert nested blocks first."""
         
         for input_key in list(block.inputs.keys()):
+            # value (may be a shadow block)
+            _value = block.inputs[input_key].value
+            if isinstance(_value, blocks.Block):
+                # update parent of inner block
+                _value.parent = block_id
+
+                _value_id = random_id('new_')
+                _insert(target, _value, _value_id) # recurse nested blocks first
+
+                # replace block object with id
+                block.inputs[input_key].value = _value_id
+
+            # block manually inserted into input
             _block = block.inputs[input_key].block
             if isinstance(_block, blocks.Block):
                 # update parent of inner block
@@ -31,12 +44,6 @@ def insert_blocks(target:dict, root_block:blocks.Block, root_block_id:str):
 
                 # replace block object with id
                 block.inputs[input_key].block = _block_id
-
-                if isinstance(block.inputs[input_key], blocks.InputStack):
-                    pass
-                    # is a stack block, set the current block next
-                    # WIP, check that this is needed
-                    # which input is used as next?
             
         # current block now has block ids in its inputs, safe to convert to dict
         target['blocks'][block_id] = block.to_dict()

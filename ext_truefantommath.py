@@ -205,9 +205,13 @@ def translate_block(target, block_id):
             utils.remove_constant_block(target, block_id, 'Infinity')
 
         case 'truefantommath_is_safe_number_block':
-            # TODO
-            #insert_helper()
-            pass
+            insert_helper(OperatorNot(InputBoolean(block=OperatorGreaterThan(
+                InputText(block=OperatorMathOp(
+                    'abs',
+                    InputNumber.from_list(inputs['A']),
+                )),
+                InputText('9007199254740991')
+            ))))
         
         case _:
             print(f'opcode not converted: {block['opcode']}')
