@@ -180,9 +180,12 @@ def parse_list(data:list) -> Input:
     if shadow is None:
         shadow_enum = None
         shadow_value = None
-    else:
+    elif isinstance(shadow, list):
         shadow_enum = shadow[0]
         shadow_value = shadow[1]
+    else: # is block such as [1, "e"]
+        shadow_enum = None
+        shadow_value = shadow
     
     # Construct relevant input:
     if shadow_enum in INPUT_CLASSES:

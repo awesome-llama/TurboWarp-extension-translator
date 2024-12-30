@@ -36,6 +36,7 @@ def translate_block(target, block_id):
         utils.insert_blocks(target, new_blocks, block_id)
     
     def _new_comment_stack():
+        """Create a comment custom block"""
         comment_block = ProceduresCall()
         comment_block.mutation={
             "tagName": "mutation",
@@ -47,6 +48,12 @@ def translate_block(target, block_id):
         comment_block.add_input(InputText, 'lmscomments_comment_param', InputText.from_list(inputs['COMMENT']))
         comment_block.copy_next(block)
         return comment_block
+
+    def _delete_comment_children(input):
+        """Blocks can be inserted into the comment text input (of inline comments that will be deleted). They should be deleted too."""
+        input_comment = parse_list(input)
+        if input_comment.block is not None:
+            utils.delete_children(target, input_comment.block)
 
     match block['opcode']:
         case 'lmscomments_commentHat':
@@ -65,12 +72,14 @@ def translate_block(target, block_id):
 
         case 'lmscomments_commentReporter':
             # delete the block
+            _delete_comment_children(inputs['COMMENT'])
             input = parse_list(inputs['INPUT'])
             utils.remove_passthrough_block(target, block_id, input.block)
             pass
         
         case 'lmscomments_commentBoolean':
             # delete the block
+            _delete_comment_children(inputs['COMMENT'])
             input = parse_list(inputs.get('INPUT', None))
             utils.remove_passthrough_block(target, block_id, input.block)
             pass

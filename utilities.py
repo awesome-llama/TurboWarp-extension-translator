@@ -117,30 +117,66 @@ def remove_passthrough_block(target:dict, block_id:str, child_block_id:str):
     target['blocks'].pop(block_id) # finally delete the original block
 
 
-def search_child_blocks(target:dict, root_block_id:str, search_for:str, max_results=None):
+def delete_children(target:dict, root_block_id:str, inputs_only=True):
+    """Recurse over a block's inputs and delete child blocks"""
+
+    def _delete_block(block_id):
+        # inputs
+        for input in target['blocks'][block_id]['inputs'].values():
+            parsed_input = blocks.parse_list(input)
+            if parsed_input.block is not None:
+                _delete_block(parsed_input.block)
+
+        # search next block too
+        if not inputs_only:
+            next = target['blocks'][block_id]['next']
+            if next is not None:
+                _delete_block(next)
+        
+        target['blocks'].pop(block_id) # delete
+
+    parent_block_id = target['blocks'][root_block_id]['parent'] # store this before it's deleted
+    next_block_id = target['blocks'][root_block_id]['next']
+
+    _delete_block(root_block_id)
+
+    # if root was a stack block, ensure that its parent points to the block after
+    if parent_block_id is not None:
+        if next_block_id not in target['blocks']: # check if the next block still exists (not deleted)
+            next_block_id = None
+        if target['blocks'][parent_block_id]['next'] == root_block_id:
+            target['blocks'][parent_block_id]['next'] = next_block_id
+        else:
+            print('TODO: check the inputs')
+            # TODO if the root was an operator, the parent has an input that needs to be updated
+
+
+def search_child_blocks(target:dict, root_block_id:str, search_for:str, max_results=None, inputs_only=True):
     """Search both inputs and next stack block for id"""
 
-    def _search(target, block_id, search_for, max_results, results):
+    if max_results is None: max_results = float('inf')
+    results = []
+
+    def _search(block_id):
         if target['blocks'][block_id]['opcode'] == search_for:
             results.append(block_id)
         if len(results) >= max_results:
             return # do not search further, enough results found
 
-        # next
-        next = target['blocks'][block_id]['next']
-        if next is not None:
-            _search(target, next, search_for, max_results, results)
-    
         # inputs
         for input in target['blocks'][block_id]['inputs'].values():
-            if input[0] == 2:
-                _search(target, input[1], search_for, max_results, results)
-            elif input[0] == 3:
-                _search(target, input[1], search_for, max_results, results)
-
-    if max_results is None: max_results = float('inf')
-    results = []
-    _search(target, root_block_id, search_for, max_results, results)
+            print(input)
+            parsed_input = blocks.parse_list(input)
+            if parsed_input.block is not None:
+                _search(parsed_input.block)
+        
+        # search next block too
+        if not inputs_only:
+            next = target['blocks'][block_id]['next']
+            if next is not None:
+                _search(next)
+    
+    _search(root_block_id)
     return results
 
 

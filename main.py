@@ -14,6 +14,7 @@ import ext_utilities
 PROJECT = 'projects/all_blocks.sb3'
 #PROJECT = 'projects/Project lteq.sb3'
 #PROJECT = 'projects/when hat.sb3'
+PROJECT = 'projects/comments.sb3'
 
 project_archive = zipfile.ZipFile(PROJECT, 'r')
 project_data = json.loads(project_archive.read('project.json'))
@@ -27,6 +28,8 @@ for target in project_data['targets']:
 
     # enumerate over blocks of a target, insert replacements
     for block_id in list(target['blocks'].keys()):
+        if block_id not in target['blocks']: continue # skip deleted blocks
+
         block = target['blocks'][block_id]
         opcode = block['opcode']
 
@@ -37,7 +40,7 @@ for target in project_data['targets']:
         
         if opcode == 'procedures_definition':
             # count the number of returns, warn if there are too many
-            return_blocks = utils.search_child_blocks(target, block_id, 'procedures_return')
+            return_blocks = utils.search_child_blocks(target, block_id, 'procedures_return', inputs_only=False)
             if len(return_blocks) > 1:
                 print('warning: custom blocks with multiple return statements can not be translated')
                 continue
