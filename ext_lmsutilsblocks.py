@@ -132,15 +132,21 @@ def translate_block(target, block_id):
             ))
 
         case 'lmsutilsblocks_normaliseValue':
-            # sign
-            # note that for parity with extension, add 0 is needed after divide
-            insert_helper(OperatorDivide(
+            # get the sign of a number. 1 if positive, -1 if negative, 0 otherwise (incl. infinity).
+            sign_script = OperatorDivide(
                 InputNumber.from_list(inputs['INPUT']),
                 InputNumber(block=OperatorMathOp(
                     'abs',
                     InputNumber.from_list(inputs['INPUT']),
+                )))
+
+            if True: # note that for parity with extension, add 0 is needed after divide to eliminate NaN
+                insert_helper(OperatorAdd(
+                    InputNumber(block=sign_script),
+                    InputNumber(0),
                 ))
-            ))
+            else:
+                insert_helper(sign_script)
 
         case 'lmsutilsblocks_clampNumber':
             # TODO
