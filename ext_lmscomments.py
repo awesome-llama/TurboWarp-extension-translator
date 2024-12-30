@@ -65,12 +65,14 @@ def translate_block(target, block_id):
 
         case 'lmscomments_commentReporter':
             # delete the block
-            #input = InputText.from_list(inputs['INPUT'])
-            #utils.remove_passthrough_block(target, block_id, input.block)
+            input = parse_list(inputs['INPUT'])
+            utils.remove_passthrough_block(target, block_id, input.block)
             pass
         
         case 'lmscomments_commentBoolean':
             # delete the block
+            input = parse_list(inputs.get('INPUT', None))
+            utils.remove_passthrough_block(target, block_id, input.block)
             pass
 
         case _:

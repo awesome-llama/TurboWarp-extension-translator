@@ -41,17 +41,15 @@ class Input():
 
     @classmethod
     def from_list(cls, data):
-        """Constructor using Scratch JSON input format such as `[3, "a", [4, ""]]`"""
-        #raise DeprecationWarning()
+        """Constructor using Scratch JSON input format such as `[3, "a", [4, ""]]`. Using this rather than parse_list() ensures the object is of the expected type."""
+        
         if data is None: 
             return cls() # no data (such as a fallback when no input is found), use default.
 
         parsed_input = parse_list(data)
         
-        # needs a safe conversion to the correct type
+        # convert to correct class
         new_input_object = cls()
-
-        # enum not needed to be manually set?
         if not(new_input_object.shadow_enum is not None and parsed_input.shadow_value is None):
             # do not copy if the enum is not none AND shadow value is none
             new_input_object.shadow_value = parsed_input.shadow_value
@@ -156,13 +154,17 @@ INPUT_CLASSES = {
 }
 
 
-def parse_list(data:list, expected_enum='any') -> Input:
+def parse_list(data:list) -> Input:
     """Convert a Scratch JSON input such as `[3, "a", [4, ""]]` to Input object"""
+    
     """
-    1 = use the shadow data, ie. the stuff typed directly into the block
+    1 = use the shadow data, e.g. the stuff typed directly into the block
     2 = nothing in the input, most of these are boolean inputs but it applies to all input types
-    3 = theres a shadow that could have data, but something else (ie. a variable) is on top of it and should be used
+    3 = theres a shadow that could have data, but something else (e.g. a variable) is on top of it and should be used
     """
+    if data is None: 
+        return Input(None, None, None)
+    
     shadow = None
     block = None
     if data[0] == 1: # use shadow

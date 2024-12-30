@@ -90,21 +90,30 @@ def remove_constant_block(target:dict, block_id:str, value):
     
 def remove_passthrough_block(target:dict, block_id:str, child_block_id:str):
     """Remove a block that passed through a value, it has 1 input and 1 output of the same type."""
-    raise NotImplementedError('')
+    #raise NotImplementedError('')
+    # this code is poor and confusing
     parent_block_id = target['blocks'][block_id]['parent']
-    parent_block = target['blocks'][parent_block_id]
     
-    for input_key in parent_block['inputs'].keys():
-        input = parent_block['inputs'][input_key]
-        if input[0] == 2:
-            if input[1] == block_id:
-                input[1] = child_block_id # update reference to child block
-                
-        elif input[0] == 3:
-            if input[1] == block_id:
-                input[1] = child_block_id # update reference to child block
+    if parent_block_id is None:
+        if child_block_id is not None:
+            target['blocks'][child_block_id]['parent'] = None
+        target['blocks'].pop(block_id)
+        return # there was no parent block, assign child as new parent
     
-    target['blocks'][child_block_id]['parent'] = parent_block_id # update reference to parent
+    if parent_block_id not in target['blocks']:
+        parent_block_id = None
+
+    else:
+        parent_block = target['blocks'][parent_block_id]
+        
+        for input_key in parent_block['inputs'].keys():
+            parsed_input = blocks.parse_list(parent_block['inputs'][input_key])
+            if parsed_input.block == block_id:
+                parsed_input.block = child_block_id
+            parent_block['inputs'][input_key] = parsed_input.to_list()
+    
+    if child_block_id is not None:
+        target['blocks'][child_block_id]['parent'] = parent_block_id # update reference to parent
     target['blocks'].pop(block_id) # finally delete the original block
 
 
