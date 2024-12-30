@@ -71,7 +71,10 @@ def remove_constant_block(target:dict, block_id:str, value):
     if parent_block_id is None: 
         return # the block does not nest
 
-    for input in target['blocks'][parent_block_id]['inputs'].values():
+    parent_block = target['blocks'][parent_block_id]
+    for input_key in parent_block['inputs'].keys():
+    #for input in target['blocks'][parent_block_id]['inputs'].values():
+        input = parent_block['inputs'][input_key]
         if input[0] == 2:
             if input[1] == block_id:
                 # don't do anything, no block is needed? unless it's a bool
@@ -79,7 +82,8 @@ def remove_constant_block(target:dict, block_id:str, value):
         elif input[0] == 3:
             if input[1] == block_id:
                 if isinstance(input[2], list):
-                    input[2][1] = str(value)
+                    input[2][1] = value # replace value
+                    parent_block['inputs'][input_key] = [1, input[2]] # remove reference to block
                 else:
                     # shadow block
                     raise NotImplementedError()

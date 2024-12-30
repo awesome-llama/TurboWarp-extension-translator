@@ -53,10 +53,10 @@ def translate_block(target, block_id):
                     InputNumber(block=OperatorRound(
                         InputNumber(block=OperatorMultiply(
                             InputNumber(block=SensingDaysSince2000()),
-                            InputNumber('86400000')
+                            InputNumber(86400000)
                         ))
                     )),
-                    InputNumber('1000'),
+                    InputNumber(1000),
                 ))
 
         case 'utilities_newline':
