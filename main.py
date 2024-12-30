@@ -7,6 +7,7 @@ import ext_lmscomments
 import ext_lmsutilsblocks
 import ext_nkmoremotion
 import ext_nonameawacomparisons
+import ext_nonameawagraph
 import ext_truefantommath
 import ext_utilities
 
@@ -14,7 +15,7 @@ import ext_utilities
 PROJECT = 'projects/all_blocks.sb3'
 #PROJECT = 'projects/Project lteq.sb3'
 #PROJECT = 'projects/when hat.sb3'
-PROJECT = 'projects/comments.sb3'
+#PROJECT = 'projects/comments.sb3'
 
 project_archive = zipfile.ZipFile(PROJECT, 'r')
 project_data = json.loads(project_archive.read('project.json'))
@@ -70,6 +71,9 @@ for target in project_data['targets']:
 
             case 'nonameawacomparisons':
                 ext_nonameawacomparisons.translate_block(target, block_id)
+
+            case 'nonameawagraph':
+                ext_nonameawagraph.translate_block(target, block_id)
 
             case 'truefantommath':
                 ext_truefantommath.translate_block(target, block_id)

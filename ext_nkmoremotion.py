@@ -12,6 +12,33 @@ def translate_block(target, block_id):
         """Insert a block using current scoped variables"""
         utils.insert_blocks(target, new_blocks, block_id)
     
+    def _direction(dx:Input, dy:Input):
+        # Scratch bearings calculation
+        return OperatorAdd(
+                InputNumber(block=OperatorMathOp(
+                    'atan',
+                    InputNumber(
+                        block=OperatorDivide(
+                            InputNumber(block=OperatorSubtract(
+                                dx,
+                                InputNumber(block=MotionXPosition()),
+                            )),
+                            InputNumber(block=OperatorSubtract(
+                                dy,
+                                InputNumber(block=MotionYPosition()),
+                            )),
+                        )
+                    ),
+                )),
+                InputNumber(block=OperatorMultiply(
+                    InputNumber(180),
+                    InputNumber(block=OperatorLessThan(
+                        InputText.from_object(dy),
+                        InputText(block=MotionYPosition())
+                    ))
+                )),
+            )
+
     match block['opcode']:
         case 'nkmoremotion_changexy':
             new_blocks = MotionGoToXY(
@@ -33,56 +60,12 @@ def translate_block(target, block_id):
             insert_helper(new_blocks)
         
         case 'nkmoremotion_directionto':
-            insert_helper(OperatorAdd(
-                InputNumber(block=OperatorMathOp(
-                    'atan',
-                    InputNumber(
-                        block=OperatorDivide(
-                            InputNumber(block=OperatorSubtract(
-                                InputNumber.from_list(inputs['X']),
-                                InputNumber(block=MotionXPosition()),
-                            )),
-                            InputNumber(block=OperatorSubtract(
-                                InputNumber.from_list(inputs['Y']),
-                                InputNumber(block=MotionYPosition()),
-                            )),
-                        )
-                    ),
-                )),
-                InputNumber(block=OperatorMultiply(
-                    InputNumber(180),
-                    InputNumber(block=OperatorLessThan(
-                        InputText.from_list(inputs['Y']),
-                        InputText(block=MotionYPosition())
-                    ))
-                )),
-            ))
+            insert_helper(_direction(InputNumber.from_list(inputs['X']), InputNumber.from_list(inputs['Y'])))
+            
 
         case 'nkmoremotion_pointto':
             new_blocks = MotionPointInDirection(
-                InputAngle(block=OperatorAdd(
-                    InputNumber(block=OperatorMathOp(
-                        'atan',
-                        InputNumber(
-                            block=OperatorDivide(
-                                InputNumber(block=OperatorSubtract(
-                                    InputNumber.from_list(inputs['X']),
-                                    InputNumber(block=MotionXPosition()),
-                                )),
-                                InputNumber(block=OperatorSubtract(
-                                    InputNumber.from_list(inputs['Y']),
-                                    InputNumber(block=MotionYPosition()),
-                                )),
-                            )
-                        ),
-                    )),
-                    InputNumber(block=OperatorMultiply(
-                        InputNumber(180),
-                        InputNumber(block=OperatorLessThan(
-                            InputText.from_list(inputs['Y']),
-                            InputText(block=MotionYPosition())
-                        ))
-                ))))
+                InputAngle(block=_direction(InputNumber.from_list(inputs['X']), InputNumber.from_list(inputs['Y'])))
             )
             new_blocks.copy_next(block)
             insert_helper(new_blocks)

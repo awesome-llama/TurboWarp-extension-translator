@@ -40,6 +40,16 @@ class Input():
         return f"{self.__class__.__name__}({self.shadow_enum} {self.shadow_value} {self.block})"
 
     @classmethod
+    def from_object(cls, input_object):
+        """Copy data from another input. No data validation."""
+        new_input_object = cls()
+        new_input_object.shadow_enum = input_object.shadow_enum
+        new_input_object.shadow_value = input_object.shadow_value
+        new_input_object.block = input_object.block
+
+        return new_input_object
+
+    @classmethod
     def from_list(cls, data):
         """Constructor using Scratch JSON input format such as `[3, "a", [4, ""]]`. Using this rather than parse_list() ensures the object is of the expected type."""
         

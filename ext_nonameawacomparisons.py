@@ -188,7 +188,7 @@ def translate_block(target, block_id):
             ))
 
         case 'nonameawacomparisons_segment':
-            # return Math.sqrt(Math.pow(args.x1 - args.x2, 2) + Math.pow(args.y1 - args.y2, 2));
+            # Math.sqrt(Math.pow(args.x1 - args.x2, 2) + Math.pow(args.y1 - args.y2, 2));
             insert_helper(_dist())
 
         case _:
