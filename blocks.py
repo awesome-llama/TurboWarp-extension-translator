@@ -21,7 +21,6 @@ import re
 'list_reporter': [13, None],
 """
 
-
 KEY_OPTIONS = ['space','up arrow','down arrow','right arrow','left arrow','enter','shift','any','!','"','#','$','%','&','\'','(',')','*','+',',','-','.','/','0','1','2','3','4','5','6','7','8','9',':',';','<','=','>','?','@','[','\\',']','^','_','`','a','b','c','d','e','f','g','h','i','j','k','l','m','n','o','p','q','r','s','t','u','v','w','x','y','z','{','|','}','~']
 EFFECTS = ['COLOR', 'FISHEYE', 'WHIRL', 'PIXELATE', 'MOSAIC', 'BRIGHTNESS', 'GHOST']
 SOUND_EFFECTS = ['PITCH', 'PAN']
@@ -148,6 +147,18 @@ class InputBroadcast(Input):
 # but this can be ignored and treated as another block id
 
 
+input_classes = {
+    4: InputNumber,
+    5: InputPositiveNumber,
+    6: InputPositiveInteger,
+    7: InputInteger,
+    8: InputAngle,
+    9: InputColor,
+    10: InputText,
+    11: InputBroadcast,
+}
+
+
 
 class Block():
     """Base block class"""
@@ -161,7 +172,7 @@ class Block():
         #self.topLevel = False # depends on parent being None
         self.x = 0
         self.y = 0
-        # mutators?
+        self.mutation = {}
         
 
     def copy_parent(self, source_dict:dict):
@@ -215,6 +226,9 @@ class Block():
         if self.parent is None:
             output['x'] = self.x
             output['y'] = self.y
+
+        if self.mutation:
+            output['mutation'] = self.mutation
 
         return output
 
@@ -402,3 +416,8 @@ class OperatorMathOp(Block):
         self.add_input(InputNumber, 'NUM', num)
 
 
+class ProceduresCall(Block):
+    def __init__(self):
+        super().__init__()
+        self.opcode = 'procedures_call'
+        #self.mutation = mutation

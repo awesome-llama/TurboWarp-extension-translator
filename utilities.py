@@ -60,9 +60,7 @@ def insert_blocks(target:dict, root_block:blocks.Block, root_block_id:str):
 def remove_constant_block(target:dict, block_id:str, value):
     """Remove a block that functioned as a constant and leave behind a literal value"""
     # note this depends on input type. 
-    # all bools are left empty because there's no alternative?
-    # number and text get stringified value UNLESS the default is actually a shadow block, in that case we do need to add a new block.
-
+    # all bools are left empty because there's no alternative? also note that shadow blocks exist, these should be left
     # requires searching all inputs of the parent to find the block
 
     parent_block_id = target['blocks'][block_id]['parent']
@@ -73,7 +71,6 @@ def remove_constant_block(target:dict, block_id:str, value):
 
     parent_block = target['blocks'][parent_block_id]
     for input_key in parent_block['inputs'].keys():
-    #for input in target['blocks'][parent_block_id]['inputs'].values():
         input = parent_block['inputs'][input_key]
         if input[0] == 2:
             if input[1] == block_id:
@@ -89,7 +86,24 @@ def remove_constant_block(target:dict, block_id:str, value):
                     raise NotImplementedError()
 
     
+def remove_passthrough_block(target:dict, block_id:str, child_block_id:str):
+    """Remove a block that passed through a value, it has 1 input and 1 output of the same type."""
 
+    parent_block_id = target['blocks'][block_id]['parent']
+    parent_block = target['blocks'][parent_block_id]
+    
+    for input_key in parent_block['inputs'].keys():
+        input = parent_block['inputs'][input_key]
+        if input[0] == 2:
+            if input[1] == block_id:
+                input[1] = child_block_id # update reference to child block
+                
+        elif input[0] == 3:
+            if input[1] == block_id:
+                input[1] = child_block_id # update reference to child block
+    
+    target['blocks'][child_block_id]['parent'] = parent_block_id # update reference to parent
+    target['blocks'].pop(block_id) # finally delete the original block
 
 
 def search_child_blocks(target:dict, root_block_id:str, search_for:str, max_results=None):

@@ -16,7 +16,6 @@ def translate_block(target, block_id):
     match block['opcode']:
         case 'lmsutilsblocks_whenBooleanHat':
             # replace with timer > bool/-0
-            print(inputs['INPUT'])
             insert_helper(EventWhenGreaterThan(
                 'TIMER',
                 InputNumber(block=OperatorDivide(

@@ -3,6 +3,7 @@ import json
 import utilities as utils
 from blocks import *
 
+import ext_lmscomments
 import ext_lmsutilsblocks
 import ext_nkmoremotion
 import ext_nonameawacomparisons
@@ -55,6 +56,9 @@ for target in project_data['targets']:
             continue # allowed natively supported extensions
         
         match opcode_namespace:
+            case 'lmscomments':
+                ext_lmscomments.translate_block(target, block_id)
+            
             case 'lmsutilsblocks':
                 ext_lmsutilsblocks.translate_block(target, block_id)
 
