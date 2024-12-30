@@ -6,7 +6,7 @@ def random_id(prefix='', avoid=None):
     
     if not isinstance(avoid, (dict, set, list)): avoid = {}
 
-    for _ in range(10):
+    for _ in range(100):
         temp = str(prefix) + "".join(random.choices('abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789', k=8))
         if temp not in avoid:
             return temp
@@ -47,6 +47,38 @@ def insert_blocks(target:dict, root_block:blocks.Block, root_block_id:str):
 
     # recursively insert
     _insert(target, root_block, root_block_id)
+
+
+
+def remove_constant_block(target:dict, block_id:str, value):
+    """Remove a block that functioned as a constant and leave behind a literal value"""
+    # note this depends on input type. 
+    # all bools are left empty because there's no alternative?
+    # number and text get stringified value UNLESS the default is actually a shadow block, in that case we do need to add a new block.
+
+    # requires searching all inputs of the parent to find the block
+
+    parent_block_id = target['blocks'][block_id]['parent']
+    target['blocks'].pop(block_id) # delete block
+
+    if parent_block_id is None: 
+        return # the block does not nest
+
+    for input in target['blocks'][parent_block_id]['inputs'].values():
+        if input[0] == 2:
+            if input[1] == block_id:
+                # don't do anything, no block is needed? unless it's a bool
+                pass
+        elif input[0] == 3:
+            if input[1] == block_id:
+                if isinstance(input[2], list):
+                    input[2][1] = str(value)
+                else:
+                    # shadow block
+                    raise NotImplementedError()
+
+    
+
 
 
 def search_child_blocks(target:dict, root_block_id:str, search_for:str, max_results=None):

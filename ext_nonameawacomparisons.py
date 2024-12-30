@@ -46,10 +46,7 @@ def translate_block(target, block_id):
             insert_helper(OperatorNot(InputBoolean()))
         
         case 'nonameawacomparisons_false':
-            # TODO delete the block. if input is not a boolean, replace it with a 0. 
-            # remember that shadow blocks exist
-            if block['topLevel']:
-                target['blocks'].pop(block_id) # top level can be deleted safely
+            utils.remove_constant_block(target, block_id, 0)
 
         case 'nonameawacomparisons_boolean':
             print('boolean cast WIP')
@@ -57,7 +54,7 @@ def translate_block(target, block_id):
 
         case 'nonameawacomparisons_booleanToInt':
             # cast to int
-            insert_helper(OperatorAdd(InputNumber.from_list(inputs['a']), InputNumber(0)))
+            insert_helper(OperatorAdd(InputNumber.from_list(inputs.get('a', None)), InputNumber(0)))
         
         case 'nonameawacomparisons_equalNegative':
             # args.a == 0 - args.b;
@@ -81,7 +78,7 @@ def translate_block(target, block_id):
             ))
 
         case 'nonameawacomparisons_notEqual':
-            insert_helper(OperatorNot(InputBoolean(OperatorEquals(
+            insert_helper(OperatorNot(InputBoolean(block=OperatorEquals(
                 InputText.from_list(inputs['a']),
                 InputText.from_list(inputs['b']),
             ))))
@@ -110,26 +107,22 @@ def translate_block(target, block_id):
 
         case 'nonameawacomparisons_xor':
             # Scratch.Cast.toBoolean(args.a) !== Scratch.Cast.toBoolean(args.b);
-            insert_helper(OperatorNot(InputBoolean(OperatorEquals(
+            insert_helper(OperatorNot(InputBoolean(block=OperatorEquals(
                 InputText.from_list(inputs.get('a', None)),
                 InputText.from_list(inputs.get('b', None)),
             ))))
 
         case 'nonameawacomparisons_equalOrGreater':
-            insert_helper(
-                OperatorNot(InputBoolean(
-                OperatorLessThan(
+            insert_helper(OperatorNot(InputBoolean(block=OperatorLessThan(
                     InputText.from_list(inputs['a']), 
-                    InputText.from_list(inputs['b'])
+                    InputText.from_list(inputs['b']),
                     )
                 )))
 
         case 'nonameawacomparisons_equalOrLess':
-            insert_helper(
-                OperatorNot(InputBoolean(
-                OperatorGreaterThan(
+            insert_helper(OperatorNot(InputBoolean(block=OperatorGreaterThan(
                     InputText.from_list(inputs['a']), 
-                    InputText.from_list(inputs['b'])
+                    InputText.from_list(inputs['b']),
                     )
                 )))
         
