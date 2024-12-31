@@ -67,8 +67,22 @@ def translate_block(target, block_id):
             insert_helper(comment_block)
 
         case 'lmscomments_commentC':
-            # C block becomes stack?
-            pass
+            # C block becomes if block
+            # note that cap blocks prevent this and there is no easy way to check for this
+            input_block_id = utils.random_id('new_')
+            
+            utils.insert_blocks(target, OperatorNot(InputBoolean()), input_block_id)
+
+            new_inputs = {'CONDITION': InputBoolean(block=input_block_id).to_list()}
+            
+            if 'SUBSTACK' in inputs: # copy substack if it exists
+                new_inputs['SUBSTACK'] = inputs['SUBSTACK']
+            
+            _delete_comment_children(inputs['COMMENT'])
+
+            block['opcode'] = 'control_if'
+            block['inputs'] = new_inputs
+
 
         case 'lmscomments_commentReporter':
             # delete the block

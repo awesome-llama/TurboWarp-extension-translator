@@ -11,6 +11,16 @@ import ext_nonameawagraph
 import ext_truefantommath
 import ext_utilities
 
+# register extensions:
+EXTENSIONS = {
+    'lmscomments': ext_lmscomments,
+    'lmsutilsblocks': ext_lmsutilsblocks,
+    'nkmoremotion': ext_nkmoremotion,
+    'nonameawacomparisons': ext_nonameawacomparisons,
+    'nonameawagraph': ext_nonameawagraph,
+    'truefantommath': ext_truefantommath,
+    'utilities': ext_utilities,
+}
 
 PROJECT = 'projects/all_blocks.sb3'
 #PROJECT = 'projects/Project lteq.sb3'
@@ -59,30 +69,10 @@ for target in project_data['targets']:
         if opcode_namespace in ['music', 'pen', 'videoSensing', 'translate', 'text2speech', 'makeymakey', 'microbit', 'ev3', 'boost', 'wedo2', 'gdxfor']:
             continue # allowed natively supported extensions
         
-        match opcode_namespace:
-            case 'lmscomments':
-                ext_lmscomments.translate_block(target, block_id)
-            
-            case 'lmsutilsblocks':
-                ext_lmsutilsblocks.translate_block(target, block_id)
-
-            case 'nkmoremotion':
-                ext_nkmoremotion.translate_block(target, block_id)
-
-            case 'nonameawacomparisons':
-                ext_nonameawacomparisons.translate_block(target, block_id)
-
-            case 'nonameawagraph':
-                ext_nonameawagraph.translate_block(target, block_id)
-
-            case 'truefantommath':
-                ext_truefantommath.translate_block(target, block_id)
-
-            case 'utilities':
-                ext_utilities.translate_block(target, block_id)
-            
-            case _:
-                print(f'namespace unrecognised: {opcode}')
+        if opcode_namespace in EXTENSIONS:
+            EXTENSIONS[opcode_namespace].translate_block(target, block_id)
+        else:
+            print(f'namespace unrecognised: {opcode}')
 
         #raise Exception('unknown opcode')
 

@@ -19,7 +19,7 @@ def random_id(prefix='', avoid=None):
 def insert_blocks(target:dict, root_block:blocks.Block, root_block_id:str):
     """Insert multiple blocks into a target. Accepts a root block with inputs containing blocks rather than block_ids."""
     
-    def _insert(target, block, block_id):
+    def _insert(block, block_id):
         """Recursively insert blocks into a target dict. Insert nested blocks first."""
         
         for input_key in list(block.inputs.keys()):
@@ -30,7 +30,7 @@ def insert_blocks(target:dict, root_block:blocks.Block, root_block_id:str):
                 _value.parent = block_id
 
                 _value_id = random_id('new_')
-                _insert(target, _value, _value_id) # recurse nested blocks first
+                _insert(_value, _value_id) # recurse nested blocks first
 
                 # replace block object with id
                 block.inputs[input_key].shadow_value = _value_id
@@ -42,7 +42,7 @@ def insert_blocks(target:dict, root_block:blocks.Block, root_block_id:str):
                 _block.parent = block_id
 
                 _block_id = random_id('new_')
-                _insert(target, _block, _block_id) # recurse nested blocks first
+                _insert(_block, _block_id) # recurse nested blocks first
 
                 # replace block object with id
                 block.inputs[input_key].block = _block_id
@@ -51,11 +51,12 @@ def insert_blocks(target:dict, root_block:blocks.Block, root_block_id:str):
         target['blocks'][block_id] = block.to_dict()
 
     ####
-    # copy parent data from original unreplaced block
-    root_block.copy_parent(target['blocks'][root_block_id])
+    # copy parent data from original unreplaced block (if it exists)
+    if root_block_id in target['blocks']:
+        root_block.copy_parent(target['blocks'][root_block_id])
 
     # recursively insert
-    _insert(target, root_block, root_block_id)
+    _insert(root_block, root_block_id)
 
 
 

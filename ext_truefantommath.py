@@ -1,5 +1,6 @@
 import utilities as utils
 from blocks import *
+import math
 
 # https://github.com/TurboWarp/extensions/blob/292032fcfdbe914dc58a00712f42ab1fc4ac04ca/extensions/true-fantom/math.js
 
@@ -146,6 +147,8 @@ def translate_block(target, block_id):
 
         case 'truefantommath_clamp_block':
             # TODO
+            # reversed intervals allowed
+            # max is always used as max even if min is larger
             pass
         
         case 'truefantommath_scale_block':
@@ -169,6 +172,58 @@ def translate_block(target, block_id):
                     )),
                 )),
                 InputNumber.from_list(inputs['m2']),
+            ))
+
+        case 'truefantommath_trunc_block':
+            # not functionally identical, does not work for infinity
+            insert_helper(OperatorMultiply(
+                InputNumber(block=OperatorMathOp(
+                    'floor',
+                    InputNumber(block=OperatorMathOp(
+                        'abs',
+                        InputNumber.from_list(inputs['A']),
+                    )),
+                )),
+                InputNumber(block=OperatorDivide(
+                    InputNumber.from_list(inputs['A']),
+                    InputNumber(block=OperatorMathOp(
+                        'abs',
+                        InputNumber.from_list(inputs['A']),
+                    )),
+                ))
+            ))
+        
+        case 'truefantommath_trunc2_block':
+            # not functionally identical, does not work for infinity
+            # also does not work when negative given
+
+            # check if input decimal places is a block or not
+            input_dp = InputNumber.from_list(inputs['B'])
+            if input_dp.block is None:
+                # no block, hard code it
+                scale_fac = 10**math.floor(max(0, float(input_dp.shadow_value)))
+                input_dp = InputNumber(scale_fac)
+            
+            insert_helper(OperatorDivide(
+                InputNumber(block=OperatorMultiply(
+                    InputNumber(block=OperatorMathOp(
+                        'floor',
+                        InputNumber(block=OperatorMathOp(
+                            'abs',
+                            InputNumber(block=OperatorMultiply(
+                                InputNumber.from_list(inputs['A']),
+                                input_dp,
+                            ))
+                        )),
+                    )),
+                    InputNumber(block=OperatorDivide(
+                        InputNumber.from_list(inputs['A']),
+                        InputNumber(block=OperatorMathOp(
+                            'abs',
+                            InputNumber.from_list(inputs['A']),
+                        )),
+                )))),
+                input_dp,
             ))
 
         case 'truefantommath_is_multiple_of_block':
