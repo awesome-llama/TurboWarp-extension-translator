@@ -36,6 +36,19 @@ class Input():
 
         return [3, self.block, shadow_combined] # inserted block with shadow hidden underneath
 
+    def has_inserted_block(self):
+        """True if a manually inserted (non-shadow) block exists"""
+        return self.block is not None
+    
+    def has_shadow_block(self):
+        """True if a shadow block exists"""
+        return self.shadow_enum is None and self.shadow_value is not None
+    
+    def is_completely_empty(self):
+        """True if the input has no block at all (not even shadow block), such as an empty boolean input or empty stack input"""
+        return self.block is None and self.shadow_enum is None and self.shadow_value is None
+
+
     def __str__(self):
         return f"{self.__class__.__name__}({self.shadow_enum} {self.shadow_value} {self.block})"
 
@@ -286,8 +299,8 @@ class Block():
 class EventWhenKeyPressed(Block):
     def __init__(self, keyoption:str):
         super().__init__()
+        if keyoption not in KEY_OPTIONS: print(f'unknown key {keyoption}')
         self.opcode = 'event_whenkeypressed'
-        if keyoption not in KEY_OPTIONS: raise Exception(f'unknown key {keyoption}')
         self.add_field('KEY_OPTION', keyoption)
 
 class EventWhenGreaterThan(Block):
@@ -350,7 +363,7 @@ class SensingKeyPressed(Block):
 class SensingKeyOptions(Block):
     def __init__(self, keyoption:str):
         super().__init__()
-        if keyoption not in KEY_OPTIONS: raise Exception(f'unknown key {keyoption}')
+        if keyoption not in KEY_OPTIONS: print(f'unknown key {keyoption}')
         self.opcode = 'sensing_keyoptions'
         self.shadow = True
         self.add_field('KEY_OPTION', keyoption)

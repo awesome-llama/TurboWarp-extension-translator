@@ -9,7 +9,7 @@ def random_id(prefix='', avoid=None):
     if not isinstance(avoid, (dict, set, list)): avoid = {}
 
     for _ in range(100):
-        temp = str(prefix) + "".join(random.choices('abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789', k=8))
+        temp = str(prefix) + "".join(random.choices('abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789', k=12))
         if temp not in avoid:
             return temp
     raise Exception('no vacant ids')
@@ -61,37 +61,56 @@ def insert_blocks(target:dict, root_block:blocks.Block, root_block_id:str):
 
 
 def remove_constant_block(target:dict, block_id:str, value):
-    """Remove a block that functioned as a constant and leave behind a literal value"""
+    """Remove a block that functioned as a constant and leave behind a literal value. It is expected that this constant block has no inputs."""
     # note this depends on input type. 
     # all bools are left empty because there's no alternative? also note that shadow blocks exist, these should be left
     # requires searching all inputs of the parent to find the block
     
     parent_block_id = target['blocks'][block_id]['parent']
-    target['blocks'].pop(block_id) # delete block
 
     if parent_block_id is None: 
+        target['blocks'].pop(block_id) # delete block
         return # the block does not nest
 
     parent_block = target['blocks'][parent_block_id]
-    for input_key in parent_block['inputs'].keys():
+    for input_key in list(parent_block['inputs'].keys()):
         input = parent_block['inputs'][input_key]
-        if input[0] == 2:
-            if input[1] == block_id:
-                # don't do anything, no block is needed? unless it's a bool
-                pass
-        elif input[0] == 3:
-            if input[1] == block_id:
-                if isinstance(input[2], list):
-                    input[2][1] = value # replace value
-                    parent_block['inputs'][input_key] = [1, input[2]] # remove reference to block
-                else:
-                    # shadow block
-                    raise NotImplementedError()
+        parsed_input = blocks.parse_list(input)
 
-    
+        if parsed_input.block != block_id: continue # not an input containing the block to remove
+
+        def _insert():
+            input_block_id = random_id('new_')
+            if isinstance(value, (int, float)):
+                # numbers use add block rather than join
+                insert_blocks(target, blocks.OperatorAdd(blocks.InputNumber(value),blocks.InputNumber(0)), input_block_id)
+            else:
+                insert_blocks(target, blocks.OperatorJoin(blocks.InputText(value),blocks.InputText('')), input_block_id)
+            target['blocks'][input_block_id]['parent'] = parent_block_id
+            target['blocks'][input_block_id]['topLevel'] = False
+            target['blocks'][input_block_id].pop('x')
+            target['blocks'][input_block_id].pop('y')
+            parsed_input.block = input_block_id
+
+        parsed_input.block = None # remove reference to block
+        if parsed_input.is_completely_empty():
+            if value == 0 or value == False:
+                pass # empty input is equivalent to false
+            else:
+                _insert() # insert a block so the value can be placed in it
+        elif parsed_input.has_shadow_block():
+            _insert() # insert a block even though there is a field
+        else:
+            parsed_input.shadow_value = value
+
+        parent_block['inputs'][input_key] = parsed_input.to_list()
+        target['blocks'].pop(block_id) # delete block
+
+
+
 def remove_passthrough_block(target:dict, block_id:str, child_block_id:str):
     """Remove a block that passed through a value, it has 1 input and 1 output of the same type."""
-    #raise NotImplementedError('')
+    
     # this code is poor and confusing
     parent_block_id = target['blocks'][block_id]['parent']
     
@@ -116,6 +135,7 @@ def remove_passthrough_block(target:dict, block_id:str, child_block_id:str):
     if child_block_id is not None:
         target['blocks'][child_block_id]['parent'] = parent_block_id # update reference to parent
     target['blocks'].pop(block_id) # finally delete the original block
+
 
 
 def delete_children(target:dict, root_block_id:str, inputs_only=True):
@@ -152,6 +172,7 @@ def delete_children(target:dict, root_block_id:str, inputs_only=True):
             # TODO if the root was an operator, the parent has an input that needs to be updated
 
 
+
 def search_child_blocks(target:dict, root_block_id:str, search_for:str, max_results=None, inputs_only=True):
     """Search both inputs and next stack block for id"""
 
@@ -166,7 +187,6 @@ def search_child_blocks(target:dict, root_block_id:str, search_for:str, max_resu
 
         # inputs
         for input in target['blocks'][block_id]['inputs'].values():
-            print(input)
             parsed_input = blocks.parse_list(input)
             if parsed_input.block is not None:
                 _search(parsed_input.block)
@@ -179,6 +199,7 @@ def search_child_blocks(target:dict, root_block_id:str, search_for:str, max_resu
     
     _search(root_block_id)
     return results
+
 
 
 def get_procedure_definition_prototype_id(target:dict, definition_id:str):

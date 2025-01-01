@@ -9,6 +9,7 @@ import ext_nkmoremotion
 import ext_nonameawacomparisons
 import ext_nonameawagraph
 import ext_truefantommath
+import ext_RixxyX
 import ext_utilities
 
 # register extensions:
@@ -19,13 +20,11 @@ EXTENSIONS = {
     'nonameawacomparisons': ext_nonameawacomparisons,
     'nonameawagraph': ext_nonameawagraph,
     'truefantommath': ext_truefantommath,
+    'RixxyX': ext_RixxyX,
     'utilities': ext_utilities,
 }
 
 PROJECT = 'projects/all_blocks.sb3'
-#PROJECT = 'projects/Project lteq.sb3'
-#PROJECT = 'projects/when hat.sb3'
-#PROJECT = 'projects/comments.sb3'
 
 project_archive = zipfile.ZipFile(PROJECT, 'r')
 project_data = json.loads(project_archive.read('project.json'))

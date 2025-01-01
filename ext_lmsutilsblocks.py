@@ -26,33 +26,44 @@ def translate_block(target, block_id):
         
         case 'lmsutilsblocks_whenKeyString':
             # key press hat
-            # check if there is an inserted block
-            #inputs['INPUT'] # get value, either it's a block or a value
-            insert_helper(EventWhenKeyPressed('space'))
+            
+            key_option = InputText.from_list(inputs['KEY_OPTION'])
+
+            if key_option.block is not None: 
+                print('could not convert lmsutilsblocks_whenKeyString, reporter can not be placed in key option field')
+                return
+            
+            insert_helper(EventWhenKeyPressed(str(key_option.shadow_value)))
 
         case 'lmsutilsblocks_keyStringPressed':
-            # key press boolean
-            insert_helper(SensingKeyPressed(InputReporter(
-                SensingKeyOptions('space'),
-                block=OperatorJoin(
-                    InputText.from_list(inputs['KEY_OPTION']),
-                    InputText(''),
-                )
-            )))
+            # key press boolean reporter
+
+            key_option = InputText.from_list(inputs['KEY_OPTION'])
+            
+            insert_helper(SensingKeyPressed(InputReporter(SensingKeyOptions(str(key_option.shadow_value)), block=key_option.block)))
         
         case 'lmsutilsblocks_trueFalseBoolean':
             # find the value of the shadow
-            #'lmsutilsblocks_menu_trueFalseMenu'
-            # insert_helper(OperatorNot(InputBoolean()))
-            # utils.remove_constant_block(target, block_id, 0)
-            pass
+            
+            input1 = InputReporter.from_list(inputs['TRUEFALSE'])
+            if input1.block is not None:
+                print('cannot remove necessary cast') # TODO: investigate json hacking
+                return
+
+            truefalse_menu_block = target['blocks'][input1.shadow_value]
+            truefalse = truefalse_menu_block['fields']['trueFalseMenu'][0]
+
+            utils.delete_children(target, input1.shadow_value)
+            
+            if truefalse == 'true':
+                insert_helper(OperatorNot(InputBoolean()))
+            elif truefalse == 'false':
+                utils.remove_constant_block(target, block_id, 0)
+            else:
+                pass # random
 
         case 'lmsutilsblocks_menu_trueFalseMenu':
             pass # shadow block, gets removed by parent
-        
-        case 'lmsutilsblocks_keyStringPressed':
-            # key press but accept any input
-            pass
 
         case 'lmsutilsblocks_norBoolean':
             insert_helper(OperatorNot(InputBoolean(block=OperatorOr(
