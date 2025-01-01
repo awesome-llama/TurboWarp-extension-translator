@@ -12,13 +12,13 @@ def translate_block(project_data, target_index, block_id):
     block = target['blocks'][block_id]
     inputs = block['inputs']
 
-    def insert_helper(new_blocks):
+    def replace_and_insert_helper(new_blocks):
         """Insert a block using current scoped variables"""
-        utils.insert_blocks(target, new_blocks, block_id)
+        utils.replace_and_insert_blocks(target, new_blocks, block_id)
 
     match block['opcode']:
         case 'RixxyX_notEquals':
-            insert_helper(OperatorNot(InputBoolean(block=OperatorEquals(
+            replace_and_insert_helper(OperatorNot(InputBoolean(block=OperatorEquals(
                     InputText.from_list(inputs['TEXT_1']), 
                     InputText.from_list(inputs['TEXT_2']),
                     )
@@ -28,13 +28,13 @@ def translate_block(project_data, target_index, block_id):
             pass
 
         case 'RixxyX_returnTrue':
-            insert_helper(OperatorNot(InputBoolean()))
+            replace_and_insert_helper(OperatorNot(InputBoolean()))
         
         case 'RixxyX_returnFalse':
             utils.remove_constant_block(target, block_id, 0)
 
         case 'RixxyX_returnString':
-            insert_helper(OperatorJoin(InputText.from_list(inputs['TEXT']), InputText('')))
+            replace_and_insert_helper(OperatorJoin(InputText.from_list(inputs['TEXT']), InputText('')))
 
         case 'RixxyX_returnCount':
             if block['topLevel']:
@@ -54,9 +54,7 @@ def translate_block(project_data, target_index, block_id):
             
         case 'RixxyX_incrementCountByNum':
             utils.create_global_variable(project_data, COUNTER_NAME, 0, COUNTER_ID)
-            new_blocks = DataChangeVariableBy(COUNTER_NAME, COUNTER_ID, InputNumber.from_list(inputs['NUM']))
-            new_blocks.copy_next(block)
-            insert_helper(new_blocks)
+            replace_and_insert_helper(DataChangeVariableBy(COUNTER_NAME, COUNTER_ID, InputNumber.from_list(inputs['NUM'])))
 
         case 'RixxyX_decrementCountByNum':
             utils.create_global_variable(project_data, COUNTER_NAME, 0, COUNTER_ID)
@@ -66,18 +64,15 @@ def translate_block(project_data, target_index, block_id):
                 new_blocks = DataChangeVariableBy(COUNTER_NAME, COUNTER_ID, parsed_input)
             else:
                 new_blocks = DataChangeVariableBy(COUNTER_NAME, COUNTER_ID, InputNumber(block=OperatorSubtract(InputNumber(0), parsed_input)))
-            new_blocks.copy_next(block)
-            insert_helper(new_blocks)
+            replace_and_insert_helper(new_blocks)
 
         case 'RixxyX_setCount':
             utils.create_global_variable(project_data, COUNTER_NAME, 0, COUNTER_ID)
-            new_blocks = DataSetVariableTo(COUNTER_NAME, COUNTER_ID, InputText.from_list(inputs['NUM']))
-            new_blocks.copy_next(block)
-            insert_helper(new_blocks)
+            replace_and_insert_helper(DataSetVariableTo(COUNTER_NAME, COUNTER_ID, InputText.from_list(inputs['NUM'])))
 
         case 'RixxyX_isJsNan':
             # functionally identical
-            insert_helper(OperatorEquals(
+            replace_and_insert_helper(OperatorEquals(
                 InputText.from_list(inputs['OBJ']),
                 InputText('NaN'),
             ))
@@ -85,7 +80,7 @@ def translate_block(project_data, target_index, block_id):
         case 'RixxyX_returnNum':
             # Math.floor(args.NUM);
             # it unintuitively returns a floored number
-            insert_helper(OperatorMathOp('floor', InputNumber.from_list(inputs['NUM'])))
+            replace_and_insert_helper(OperatorMathOp('floor', InputNumber.from_list(inputs['NUM'])))
 
         case 'RixxyX_returnBool':
             # TODO cast string to bool

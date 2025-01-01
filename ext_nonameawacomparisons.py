@@ -9,9 +9,9 @@ def translate_block(project_data, target_index, block_id):
     block = target['blocks'][block_id]
     inputs = block['inputs']
 
-    def insert_helper(new_blocks):
+    def replace_and_insert_helper(new_blocks):
         """Insert a block using current scoped variables"""
-        utils.insert_blocks(target, new_blocks, block_id)
+        utils.replace_and_insert_blocks(target, new_blocks, block_id)
     
     def _dist(x1='x1', y1='y1', x2='x2', y2='y2'):
         # 2d distance calculation
@@ -43,7 +43,7 @@ def translate_block(project_data, target_index, block_id):
     
     match block['opcode']:
         case 'nonameawacomparisons_true':
-            insert_helper(OperatorNot(InputBoolean()))
+            replace_and_insert_helper(OperatorNot(InputBoolean()))
         
         case 'nonameawacomparisons_false':
             utils.remove_constant_block(target, block_id, 0)
@@ -54,11 +54,11 @@ def translate_block(project_data, target_index, block_id):
 
         case 'nonameawacomparisons_booleanToInt':
             # cast to int
-            insert_helper(OperatorAdd(InputNumber.from_list(inputs.get('a', None)), InputNumber(0)))
+            replace_and_insert_helper(OperatorAdd(InputNumber.from_list(inputs.get('a', None)), InputNumber(0)))
         
         case 'nonameawacomparisons_equalNegative':
             # args.a == 0 - args.b;
-            insert_helper(OperatorEquals(
+            replace_and_insert_helper(OperatorEquals(
                 InputText.from_list(inputs['a']),
                 InputText(block=OperatorSubtract(InputNumber(0), InputNumber.from_list(inputs['b']))),
             ))
@@ -66,7 +66,7 @@ def translate_block(project_data, target_index, block_id):
         case 'nonameawacomparisons_equalPlusMinus':
             # args.a == 0 - args.b || args.a == args.b;
             # why no abs?
-            insert_helper(OperatorOr(
+            replace_and_insert_helper(OperatorOr(
                 InputBoolean(block=OperatorEquals(
                     InputText.from_list(inputs['a']),
                     InputText.from_list(inputs['b']),
@@ -78,21 +78,21 @@ def translate_block(project_data, target_index, block_id):
             ))
 
         case 'nonameawacomparisons_notEqual':
-            insert_helper(OperatorNot(InputBoolean(block=OperatorEquals(
+            replace_and_insert_helper(OperatorNot(InputBoolean(block=OperatorEquals(
                 InputText.from_list(inputs['a']),
                 InputText.from_list(inputs['b']),
             ))))
 
         case 'nonameawacomparisons_almostEqual2n':
             # Math.round(args.a) == Math.round(args.b);
-            insert_helper(OperatorEquals(
+            replace_and_insert_helper(OperatorEquals(
                 InputText(block=OperatorRound(InputNumber.from_list(inputs['a']))),
                 InputText(block=OperatorRound(InputNumber.from_list(inputs['b']))),
             ))
 
         case 'nonameawacomparisons_almostEqual3n':
             # Math.abs(args.a - args.b) <= args.c;
-            insert_helper(OperatorNot(InputBoolean(block=
+            replace_and_insert_helper(OperatorNot(InputBoolean(block=
                 OperatorGreaterThan(
                     InputText(block=OperatorMathOp(
                         'abs',
@@ -107,20 +107,20 @@ def translate_block(project_data, target_index, block_id):
 
         case 'nonameawacomparisons_xor':
             # Scratch.Cast.toBoolean(args.a) !== Scratch.Cast.toBoolean(args.b);
-            insert_helper(OperatorNot(InputBoolean(block=OperatorEquals(
+            replace_and_insert_helper(OperatorNot(InputBoolean(block=OperatorEquals(
                 InputText.from_list(inputs.get('a', None)),
                 InputText.from_list(inputs.get('b', None)),
             ))))
 
         case 'nonameawacomparisons_equalOrGreater':
-            insert_helper(OperatorNot(InputBoolean(block=OperatorLessThan(
+            replace_and_insert_helper(OperatorNot(InputBoolean(block=OperatorLessThan(
                     InputText.from_list(inputs['a']), 
                     InputText.from_list(inputs['b']),
                     )
                 )))
 
         case 'nonameawacomparisons_equalOrLess':
-            insert_helper(OperatorNot(InputBoolean(block=OperatorGreaterThan(
+            replace_and_insert_helper(OperatorNot(InputBoolean(block=OperatorGreaterThan(
                     InputText.from_list(inputs['a']), 
                     InputText.from_list(inputs['b']),
                     )
@@ -128,7 +128,7 @@ def translate_block(project_data, target_index, block_id):
         
         case 'nonameawacomparisons_between':
             # a < b < c
-            insert_helper(OperatorAnd(
+            replace_and_insert_helper(OperatorAnd(
                 InputBoolean(block=OperatorLessThan(
                     InputText.from_list(inputs['a']),
                     InputText.from_list(inputs['b']),
@@ -141,7 +141,7 @@ def translate_block(project_data, target_index, block_id):
 
         case 'nonameawacomparisons_betweenEqual':
             # a <= b <= c
-            insert_helper(OperatorNot(InputBoolean(block=OperatorOr(
+            replace_and_insert_helper(OperatorNot(InputBoolean(block=OperatorOr(
                 InputBoolean(block=OperatorGreaterThan(
                     InputText.from_list(inputs['a']),
                     InputText.from_list(inputs['b']),
@@ -154,7 +154,7 @@ def translate_block(project_data, target_index, block_id):
         
         case 'nonameawacomparisons_vertical':
             # (args.a - (args.b - 90)) % 180 == 0;
-            insert_helper(OperatorEquals(
+            replace_and_insert_helper(OperatorEquals(
                 InputText(block=OperatorMod(
                     InputNumber(block=OperatorSubtract(
                         InputNumber.from_list(inputs['a']),
@@ -170,7 +170,7 @@ def translate_block(project_data, target_index, block_id):
 
         case 'nonameawacomparisons_segment_one':
             # round(dist) = 
-            insert_helper(OperatorEquals(
+            replace_and_insert_helper(OperatorEquals(
                 InputText(block=OperatorRound(
                     InputNumber(block=_dist())
                 )),
@@ -178,7 +178,7 @@ def translate_block(project_data, target_index, block_id):
             ))
 
         case 'nonameawacomparisons_segment_two':
-            insert_helper(OperatorEquals(
+            replace_and_insert_helper(OperatorEquals(
                 InputText(block=OperatorRound(
                     InputNumber(block=_dist('x11', 'y11', 'x12', 'y12'))
                 )),
@@ -189,7 +189,7 @@ def translate_block(project_data, target_index, block_id):
 
         case 'nonameawacomparisons_segment':
             # Math.sqrt(Math.pow(args.x1 - args.x2, 2) + Math.pow(args.y1 - args.y2, 2));
-            insert_helper(_dist())
+            replace_and_insert_helper(_dist())
 
         case _:
             print(f'opcode not converted: {block['opcode']}')

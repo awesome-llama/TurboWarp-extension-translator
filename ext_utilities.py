@@ -8,33 +8,33 @@ def translate_block(project_data, target_index, block_id):
     block = target['blocks'][block_id]
     inputs = block['inputs']
 
-    def insert_helper(new_blocks):
+    def replace_and_insert_helper(new_blocks):
         """Insert a block using current scoped variables"""
-        utils.insert_blocks(target, new_blocks, block_id)
+        utils.replace_and_insert_blocks(target, new_blocks, block_id)
     
     match block['opcode']:
         case 'utilities_trueBlock':
-            insert_helper(OperatorNot(InputBoolean()))
+            replace_and_insert_helper(OperatorNot(InputBoolean()))
         
         case 'utilities_falseBlock':
             utils.remove_constant_block(target, block_id, 0)
             
         case 'utilities_isLessOrEqual':
-            insert_helper(OperatorNot(InputBoolean(block=OperatorGreaterThan(
+            replace_and_insert_helper(OperatorNot(InputBoolean(block=OperatorGreaterThan(
                     InputText.from_list(inputs['A']), 
                     InputText.from_list(inputs['B']),
                     )
                 )))
         
         case 'utilities_isMoreOrEqual':
-            insert_helper(OperatorNot(InputBoolean(block=OperatorLessThan(
+            replace_and_insert_helper(OperatorNot(InputBoolean(block=OperatorLessThan(
                     InputText.from_list(inputs['A']), 
                     InputText.from_list(inputs['B']),
                     )
                 )))
 
         case 'utilities_exponent':
-            insert_helper(OperatorMathOp(
+            replace_and_insert_helper(OperatorMathOp(
                 'e ^',
                 InputNumber(block=OperatorMultiply(
                     InputNumber(block=OperatorMathOp(
@@ -49,7 +49,7 @@ def translate_block(project_data, target_index, block_id):
             utils.remove_constant_block(target, block_id, 3.141592653589793)
 
         case 'utilities_currentMillisecond':
-            insert_helper(OperatorMod(
+            replace_and_insert_helper(OperatorMod(
                     InputNumber(block=OperatorRound(
                         InputNumber(block=OperatorMultiply(
                             InputNumber(block=SensingDaysSince2000()),

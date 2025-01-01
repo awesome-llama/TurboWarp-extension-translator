@@ -9,9 +9,9 @@ def translate_block(project_data, target_index, block_id):
     block = target['blocks'][block_id]
     inputs = block['inputs']
 
-    def insert_helper(new_blocks):
+    def replace_and_insert_helper(new_blocks):
         """Insert a block using current scoped variables"""
-        utils.insert_blocks(target, new_blocks, block_id)
+        utils.replace_and_insert_blocks(target, new_blocks, block_id)
     
     def _dist(x1='x1', y1='y1', x2='x2', y2='y2'):
         # 2d distance calculation
@@ -71,11 +71,11 @@ def translate_block(project_data, target_index, block_id):
     match block['opcode']:
         case 'nonameawagraph_line_section':
             # Math.sqrt(Math.pow(args.x1 - args.x2, 2) + Math.pow(args.y1 - args.y2, 2));
-            insert_helper(_dist())
+            replace_and_insert_helper(_dist())
 
         case 'nonameawagraph_ray_direction2':
             # what's wrong with nonameawagraph_ray_direction?
-            insert_helper(_direction(
+            replace_and_insert_helper(_direction(
                 InputNumber(block=OperatorSubtract(
                     InputNumber.from_list(inputs['x2']),
                     InputNumber.from_list(inputs['x1']),
@@ -88,7 +88,7 @@ def translate_block(project_data, target_index, block_id):
 
         case 'nonameawagraph_vertical':
             # (args.a - (args.b - 90)) % 180 == 0;
-            insert_helper(OperatorEquals(
+            replace_and_insert_helper(OperatorEquals(
                 InputText(block=OperatorMod(
                     InputNumber(block=OperatorSubtract(
                         InputNumber.from_list(inputs['a']),

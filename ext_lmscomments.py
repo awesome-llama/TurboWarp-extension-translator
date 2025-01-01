@@ -31,9 +31,9 @@ def translate_block(project_data, target_index, block_id):
     block = target['blocks'][block_id]
     inputs = block['inputs']
 
-    def insert_helper(new_blocks):
+    def replace_and_insert_helper(new_blocks):
         """Insert a block using current scoped variables"""
-        utils.insert_blocks(target, new_blocks, block_id)
+        utils.replace_and_insert_blocks(target, new_blocks, block_id)
     
     def _new_comment_stack():
         """Create a comment custom block"""
@@ -59,19 +59,19 @@ def translate_block(project_data, target_index, block_id):
         case 'lmscomments_commentHat':
             # hat becomes stack block
             comment_block = _new_comment_stack()
-            insert_helper(comment_block)
+            replace_and_insert_helper(comment_block)
 
         case 'lmscomments_commentCommand':
             # stack remains as stack
             comment_block = _new_comment_stack()
-            insert_helper(comment_block)
+            replace_and_insert_helper(comment_block)
 
         case 'lmscomments_commentC':
             # C block becomes if block
             # note that cap blocks prevent this and there is no easy way to check for this
             input_block_id = utils.random_id('new_')
             
-            utils.insert_blocks(target, OperatorNot(InputBoolean()), input_block_id)
+            utils.replace_and_insert_blocks(target, OperatorNot(InputBoolean()), input_block_id)
 
             new_inputs = {'CONDITION': InputBoolean(block=input_block_id).to_list()}
             

@@ -1,6 +1,8 @@
 import utilities as utils
 from blocks import *
 
+STEP_DIST_NAME = 'nkmoremotion_steptowards_ratio'
+STEP_DIST_ID = utils.random_id('var_')
 
 def translate_block(project_data, target_index, block_id):
     """Translate a single block"""
@@ -8,9 +10,9 @@ def translate_block(project_data, target_index, block_id):
     block = target['blocks'][block_id]
     inputs = block['inputs']
 
-    def insert_helper(new_blocks):
+    def replace_and_insert_helper(new_blocks):
         """Insert a block using current scoped variables"""
-        utils.insert_blocks(target, new_blocks, block_id)
+        utils.replace_and_insert_blocks(target, new_blocks, block_id)
     
     def _direction(dx:Input, dy:Input):
         # Scratch bearings calculation
@@ -38,10 +40,38 @@ def translate_block(project_data, target_index, block_id):
                     ))
                 )),
             )
+    
+    def _dist_from_sprite(x='X', y='Y'):
+        """Distance using sprite's position"""
+        return OperatorMathOp(
+            'sqrt',
+            InputNumber(block=OperatorAdd(
+                InputNumber(block=OperatorMultiply(
+                    InputNumber(block=OperatorSubtract(
+                        InputNumber.from_list(inputs[x]),
+                        InputNumber(block=MotionXPosition()),
+                    )),
+                    InputNumber(block=OperatorSubtract(
+                        InputNumber.from_list(inputs[x]),
+                        InputNumber(block=MotionXPosition()),
+                    )),
+                )),
+                InputNumber(block=OperatorMultiply(
+                    InputNumber(block=OperatorSubtract(
+                        InputNumber.from_list(inputs[y]),
+                        InputNumber(block=MotionYPosition()),
+                    )),
+                    InputNumber(block=OperatorSubtract(
+                        InputNumber.from_list(inputs[y]),
+                        InputNumber(block=MotionYPosition()),
+                    )),
+                )),
+            )),
+        )
 
     match block['opcode']:
         case 'nkmoremotion_changexy':
-            new_blocks = MotionGoToXY(
+            replace_and_insert_helper(MotionGoToXY(
                     InputNumber(block=OperatorAdd(
                         InputNumber(block=MotionXPosition()),
                         InputNumber.from_list(inputs['X']),
@@ -50,52 +80,71 @@ def translate_block(project_data, target_index, block_id):
                         InputNumber(block=MotionYPosition()),
                         InputNumber.from_list(inputs['Y']),
                     )),
-                )
-            new_blocks.copy_next(block)
-            insert_helper(new_blocks)
+                ))
         
         case 'nkmoremotion_fence':
-            new_blocks = MotionChangeXBy(InputNumber(0))
-            new_blocks.copy_next(block)
-            insert_helper(new_blocks)
+            replace_and_insert_helper(MotionChangeXBy(InputNumber(0)))
         
-        case 'nkmoremotion_directionto':
-            insert_helper(_direction(InputNumber.from_list(inputs['X']), InputNumber.from_list(inputs['Y'])))
+        case 'nkmoremotion_steptowards':
+            # it only makes sense to create a variable for this
+
+            #utils.create_global_variable(project_data, STEP_DIST_NAME, 0, STEP_DIST_ID)
+            #new_blocks = DataChangeVariableBy(COUNTER_NAME, COUNTER_ID, InputNumber.from_list(inputs['NUM']))
+            #new_blocks.copy_next(block)
+            #replace_and_insert_helper(new_blocks)
+
+
+            #new_blocks = ControlIf(Operator)
+
+            #new_blocks.copy_next(block)
+            #replace_and_insert_helper(new_blocks)
+            pass
             
 
-        case 'nkmoremotion_pointto':
-            new_blocks = MotionPointInDirection(
-                InputAngle(block=_direction(InputNumber.from_list(inputs['X']), InputNumber.from_list(inputs['Y'])))
-            )
-            new_blocks.copy_next(block)
-            insert_helper(new_blocks)
-
-        case 'nkmoremotion_distanceto':
-            insert_helper(OperatorMathOp(
-                'sqrt',
+        case 'nkmoremotion_tweentowards':
+            # util.target.setXY(
+            #    (x - util.target.x) * (val / 100) + util.target.x,
+            #    (y - util.target.y) * (val / 100) + util.target.y
+            # );
+            replace_and_insert_helper(MotionGoToXY(
                 InputNumber(block=OperatorAdd(
                     InputNumber(block=OperatorMultiply(
                         InputNumber(block=OperatorSubtract(
                             InputNumber.from_list(inputs['X']),
                             InputNumber(block=MotionXPosition()),
                         )),
-                        InputNumber(block=OperatorSubtract(
-                            InputNumber.from_list(inputs['X']),
-                            InputNumber(block=MotionXPosition()),
+                        InputNumber(block=OperatorDivide(
+                            InputNumber.from_list(inputs['PERCENT']),
+                            InputNumber(100),
                         )),
                     )),
+                    InputNumber(block=MotionXPosition()),
+                )),
+                InputNumber(block=OperatorAdd(
                     InputNumber(block=OperatorMultiply(
                         InputNumber(block=OperatorSubtract(
                             InputNumber.from_list(inputs['Y']),
                             InputNumber(block=MotionYPosition()),
                         )),
-                        InputNumber(block=OperatorSubtract(
-                            InputNumber.from_list(inputs['Y']),
-                            InputNumber(block=MotionYPosition()),
+                        InputNumber(block=OperatorDivide(
+                            InputNumber.from_list(inputs['PERCENT']),
+                            InputNumber(100),
                         )),
                     )),
-                )),
+                    InputNumber(block=MotionYPosition()),
+                ))))
+            
+
+        case 'nkmoremotion_directionto':
+            replace_and_insert_helper(_direction(InputNumber.from_list(inputs['X']), InputNumber.from_list(inputs['Y'])))
+        
+        case 'nkmoremotion_pointto':
+            replace_and_insert_helper(MotionPointInDirection(
+                InputAngle(block=_direction(InputNumber.from_list(inputs['X']), InputNumber.from_list(inputs['Y'])))
             ))
+
+        case 'nkmoremotion_distanceto':
+            replace_and_insert_helper(_dist_from_sprite())
 
         case _:
             print(f'opcode not converted: {block['opcode']}')

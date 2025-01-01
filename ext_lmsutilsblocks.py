@@ -9,14 +9,14 @@ def translate_block(project_data, target_index, block_id):
     block = target['blocks'][block_id]
     inputs = block['inputs']
 
-    def insert_helper(new_blocks):
+    def replace_and_insert_helper(new_blocks):
         """Insert a block using current scoped variables"""
-        utils.insert_blocks(target, new_blocks, block_id)
+        utils.replace_and_insert_blocks(target, new_blocks, block_id)
     
     match block['opcode']:
         case 'lmsutilsblocks_whenBooleanHat':
             # replace with timer > bool/-0
-            insert_helper(EventWhenGreaterThan(
+            replace_and_insert_helper(EventWhenGreaterThan(
                 'TIMER',
                 InputNumber(block=OperatorDivide(
                     InputNumber.from_list(inputs['INPUT']),
@@ -28,19 +28,17 @@ def translate_block(project_data, target_index, block_id):
             # key press hat
             
             key_option = InputText.from_list(inputs['KEY_OPTION'])
-
             if key_option.block is not None: 
                 print('could not convert lmsutilsblocks_whenKeyString, reporter can not be placed in key option field')
                 return
             
-            insert_helper(EventWhenKeyPressed(str(key_option.shadow_value)))
+            replace_and_insert_helper(EventWhenKeyPressed(str(key_option.shadow_value)))
 
         case 'lmsutilsblocks_keyStringPressed':
             # key press boolean reporter
 
             key_option = InputText.from_list(inputs['KEY_OPTION'])
-            
-            insert_helper(SensingKeyPressed(InputReporter(SensingKeyOptions(str(key_option.shadow_value)), block=key_option.block)))
+            replace_and_insert_helper(SensingKeyPressed(InputReporter(SensingKeyOptions(str(key_option.shadow_value)), block=key_option.block)))
         
         case 'lmsutilsblocks_trueFalseBoolean':
             # find the value of the shadow
@@ -56,7 +54,7 @@ def translate_block(project_data, target_index, block_id):
             utils.delete_children(target, input1.shadow_value)
             
             if truefalse == 'true':
-                insert_helper(OperatorNot(InputBoolean()))
+                replace_and_insert_helper(OperatorNot(InputBoolean()))
             elif truefalse == 'false':
                 utils.remove_constant_block(target, block_id, 0)
             else:
@@ -66,59 +64,59 @@ def translate_block(project_data, target_index, block_id):
             pass # shadow block, gets removed by parent
 
         case 'lmsutilsblocks_norBoolean':
-            insert_helper(OperatorNot(InputBoolean(block=OperatorOr(
+            replace_and_insert_helper(OperatorNot(InputBoolean(block=OperatorOr(
                 InputBoolean.from_list(inputs.get('INPUTA', None)),
                 InputBoolean.from_list(inputs.get('INPUTB', None)),
             ))))
         
         case 'lmsutilsblocks_xorBoolean':
-            insert_helper(OperatorNot(InputBoolean(block=OperatorEquals(
+            replace_and_insert_helper(OperatorNot(InputBoolean(block=OperatorEquals(
                 InputText.from_list(inputs.get('INPUTA', None)),
                 InputText.from_list(inputs.get('INPUTB', None)),
             ))))
         
         case 'lmsutilsblocks_xnorBoolean':
-            insert_helper(OperatorEquals(
+            replace_and_insert_helper(OperatorEquals(
                 InputText.from_list(inputs.get('INPUTA', None)),
                 InputText.from_list(inputs.get('INPUTB', None)),
             ))
         
         case 'lmsutilsblocks_nandBoolean':
-            insert_helper(OperatorNot(InputBoolean(block=OperatorAnd(
+            replace_and_insert_helper(OperatorNot(InputBoolean(block=OperatorAnd(
                 InputBoolean.from_list(inputs.get('INPUTA', None)),
                 InputBoolean.from_list(inputs.get('INPUTB', None)),
             ))))
 
         case 'lmsutilsblocks_notEqualTo':
-            insert_helper(OperatorNot(InputBoolean(block=OperatorEquals(
+            replace_and_insert_helper(OperatorNot(InputBoolean(block=OperatorEquals(
                     InputText.from_list(inputs['INPUTA']), 
                     InputText.from_list(inputs['INPUTB']),
                     )
                 )))
         
         case 'lmsutilsblocks_moreThanEqual':
-            insert_helper(OperatorNot(InputBoolean(block=OperatorLessThan(
+            replace_and_insert_helper(OperatorNot(InputBoolean(block=OperatorLessThan(
                     InputText.from_list(inputs['INPUTA']), 
                     InputText.from_list(inputs['INPUTB']),
                     )
                 )))
 
         case 'lmsutilsblocks_lessThanEqual':
-            insert_helper(OperatorNot(InputBoolean(block=OperatorGreaterThan(
+            replace_and_insert_helper(OperatorNot(InputBoolean(block=OperatorGreaterThan(
                     InputText.from_list(inputs['INPUTA']), 
                     InputText.from_list(inputs['INPUTB']),
                     )
                 )))
         
         case 'lmsutilsblocks_negativeReporter':
-            insert_helper(
+            replace_and_insert_helper(
                 OperatorSubtract(
                     InputNumber('0'), 
                     InputNumber.from_list(inputs['INPUT'])
                 ))
         
         case 'lmsutilsblocks_exponentBlock':
-            insert_helper(OperatorMathOp(
+            replace_and_insert_helper(OperatorMathOp(
                 'e ^',
                 InputNumber(block=OperatorMultiply(
                     InputNumber(block=OperatorMathOp(
@@ -130,7 +128,7 @@ def translate_block(project_data, target_index, block_id):
             ))
 
         case 'lmsutilsblocks_rootBlock':
-            insert_helper(OperatorMathOp(
+            replace_and_insert_helper(OperatorMathOp(
                 'e ^',
                 InputNumber(block=OperatorDivide(
                     InputNumber(block=OperatorMathOp(
@@ -151,12 +149,12 @@ def translate_block(project_data, target_index, block_id):
                 )))
 
             if True: # note that for parity with extension, add 0 is needed after divide to eliminate NaN
-                insert_helper(OperatorAdd(
+                replace_and_insert_helper(OperatorAdd(
                     InputNumber(block=sign_script),
                     InputNumber(0),
                 ))
             else:
-                insert_helper(sign_script)
+                replace_and_insert_helper(sign_script)
 
         case 'lmsutilsblocks_clampNumber':
             # TODO

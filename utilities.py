@@ -16,9 +16,9 @@ def random_id(prefix='', avoid=None):
 
 
 
-def insert_blocks(target:dict, root_block:blocks.Block, root_block_id:str):
-    """Insert multiple blocks into a target. Accepts a root block with inputs containing blocks rather than block_ids."""
-    
+def replace_and_insert_blocks(target:dict, root_block:blocks.Block, root_block_id:str):
+    """Insert multiple blocks into a target with the first root block replacing the original (if it exists). Accepts a root block (that may be a stack block or reporter) with inputs containing nested reporter block objects."""
+
     def _insert(block, block_id):
         """Recursively insert blocks into a target dict. Insert nested blocks first."""
         
@@ -51,9 +51,12 @@ def insert_blocks(target:dict, root_block:blocks.Block, root_block_id:str):
         target['blocks'][block_id] = block.to_dict()
 
     ####
-    # copy parent data from original unreplaced block (if it exists)
+    # copy parent and next data from original unreplaced block (if it exists).
+    # this is because this block is a direct replacement of existing.
+    # nested blocks are always created new and do not have an original block to copy from.
     if root_block_id in target['blocks']:
         root_block.copy_parent(target['blocks'][root_block_id])
+        root_block.copy_next(target['blocks'][root_block_id])
 
     # recursively insert
     _insert(root_block, root_block_id)
@@ -61,10 +64,7 @@ def insert_blocks(target:dict, root_block:blocks.Block, root_block_id:str):
 
 
 def remove_constant_block(target:dict, block_id:str, value):
-    """Remove a block that functioned as a constant and leave behind a literal value. It is expected that this constant block has no inputs."""
-    # note this depends on input type. 
-    # all bools are left empty because there's no alternative? also note that shadow blocks exist, these should be left
-    # requires searching all inputs of the parent to find the block
+    """Remove a block that functioned as a constant and leave behind a literal value (which may be inside a join or add if required). It is expected that this constant block has no inputs/children."""
     
     parent_block_id = target['blocks'][block_id]['parent']
 
@@ -83,9 +83,9 @@ def remove_constant_block(target:dict, block_id:str, value):
             input_block_id = random_id('new_')
             if isinstance(value, (int, float)):
                 # numbers use add block rather than join
-                insert_blocks(target, blocks.OperatorAdd(blocks.InputNumber(value),blocks.InputNumber(0)), input_block_id)
+                replace_and_insert_blocks(target, blocks.OperatorAdd(blocks.InputNumber(value),blocks.InputNumber(0)), input_block_id)
             else:
-                insert_blocks(target, blocks.OperatorJoin(blocks.InputText(value),blocks.InputText('')), input_block_id)
+                replace_and_insert_blocks(target, blocks.OperatorJoin(blocks.InputText(value),blocks.InputText('')), input_block_id)
             target['blocks'][input_block_id]['parent'] = parent_block_id
             target['blocks'][input_block_id]['topLevel'] = False
             target['blocks'][input_block_id].pop('x')

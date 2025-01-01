@@ -234,13 +234,13 @@ class Block():
         
 
     def copy_parent(self, source_dict:dict):
-        """Copy parent data of a block in dict format"""
+        """Copy parent data of a block in dict format. Includes `parent`, `x`, and `y` keys."""
         self.parent = source_dict['parent']
         self.x = source_dict.get('x', 0)
         self.y = source_dict.get('y', 0)
 
     def copy_next(self, source_dict:dict):
-        """Copy next data of a block in dict format"""
+        """Copy `next` data of a block in dict format"""
         self.next = source_dict['next']
 
 
@@ -355,6 +355,21 @@ class MotionDirection(Block):
         super().__init__()
         self.opcode = 'motion_direction'
 
+
+class ControlIf(Block):
+    def __init__(self, condition:InputBoolean, substack:InputStack):
+        super().__init__()
+        self.opcode = 'control_if'
+        self.add_input(InputBoolean, 'CONDITION', condition)
+        self.add_input(InputStack, 'SUBSTACK', substack)
+
+class ControlIfElse(Block):
+    def __init__(self, condition:InputBoolean, substack_true:InputStack, substack_false:InputStack):
+        super().__init__()
+        self.opcode = 'control_if'
+        self.add_input(InputBoolean, 'CONDITION', condition)
+        self.add_input(InputStack, 'SUBSTACK', substack_true)
+        self.add_input(InputStack, 'SUBSTACK2', substack_false)
 
 
 class SensingKeyPressed(Block):
