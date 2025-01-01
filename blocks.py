@@ -259,7 +259,10 @@ class Block():
         if key in self.fields:
             raise Exception('key already exists')
 
-        self.fields[key] = [value, None] # no idea what the second item is
+        if not isinstance(value, list):
+            value = [value, None] # the field is always formatted as a 2-item list
+
+        self.fields[key] = value
 
     def to_dict(self):
         """Create a dict representation of a block. The id of itself is not handled here."""
@@ -471,6 +474,21 @@ class OperatorMathOp(Block):
         if op not in ['abs','floor','ceiling','sqrt','sin','cos','tan','asin','acos','atan','ln','log','e ^','10 ^']: raise Exception(f'unknown math op {op}')
         self.add_field('OPERATOR', op)
         self.add_input(InputNumber, 'NUM', num)
+
+
+class DataSetVariableTo(Block):
+    def __init__(self, variable_name:str, variable_id:str, value:InputText):
+        super().__init__()
+        self.opcode = 'data_setvariableto'
+        self.add_field('VARIABLE', [variable_name, variable_id])
+        self.add_input(InputText, 'VALUE', value)
+
+class DataChangeVariableBy(Block):
+    def __init__(self, variable_name:str, variable_id:str, value:InputNumber):
+        super().__init__()
+        self.opcode = 'data_changevariableby'
+        self.add_field('VARIABLE', [variable_name, variable_id])
+        self.add_input(InputNumber, 'VALUE', value)
 
 
 class ProceduresCall(Block):

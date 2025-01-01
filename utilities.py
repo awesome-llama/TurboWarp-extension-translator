@@ -111,18 +111,16 @@ def remove_constant_block(target:dict, block_id:str, value):
 def remove_passthrough_block(target:dict, block_id:str, child_block_id:str):
     """Remove a block that passed through a value, it has 1 input and 1 output of the same type."""
     
-    # this code is poor and confusing
     parent_block_id = target['blocks'][block_id]['parent']
     
-    if parent_block_id is None:
+    if parent_block_id is None: # there was no parent block, assign child as new parent
         if child_block_id is not None:
             target['blocks'][child_block_id]['parent'] = None
         target['blocks'].pop(block_id)
-        return # there was no parent block, assign child as new parent
+        return 
     
     if parent_block_id not in target['blocks']:
-        parent_block_id = None
-
+        parent_block_id = None # if the parent block doesn't exist, set to None rather than id
     else:
         parent_block = target['blocks'][parent_block_id]
         
@@ -133,7 +131,8 @@ def remove_passthrough_block(target:dict, block_id:str, child_block_id:str):
             parent_block['inputs'][input_key] = parsed_input.to_list()
     
     if child_block_id is not None:
-        target['blocks'][child_block_id]['parent'] = parent_block_id # update reference to parent
+        if not isinstance(child_block_id, list): # ensure it's not a variable or list reporter (which has no parent key)
+            target['blocks'][child_block_id]['parent'] = parent_block_id # update reference to parent
     target['blocks'].pop(block_id) # finally delete the original block
 
 
@@ -180,6 +179,9 @@ def search_child_blocks(target:dict, root_block_id:str, search_for:str, max_resu
     results = []
 
     def _search(block_id):
+        if isinstance(block_id, list):
+            return # block is a variable or list reporter
+
         if target['blocks'][block_id]['opcode'] == search_for:
             results.append(block_id)
         if len(results) >= max_results:
@@ -206,4 +208,41 @@ def get_procedure_definition_prototype_id(target:dict, definition_id:str):
     # this assumes custom_block key is [1, id]
     return target['blocks'][definition_id]['inputs']['custom_block'][1]
     
+
+
+def get_all_variables(project_data):
+    variables = []
+    for target in project_data:
+        if 'variables' in target:
+            for item in target['variables'].items():
+                variables.append(item)
+    return variables
+
+
+
+def create_global_variable(project_data, variable_name, variable_value=0, variable_id=None):
+    """Create a global variable if it does not exist."""
+
+    # TODO make this more robust
+    # are duplicate ids allowed? it's best not as the code is simpler
+
+    if variable_id is None:
+        variable_id = random_id('var')
+
+    for target in project_data['targets']:
+        if target['isStage']:
+
+            for variable in get_all_variables(project_data):
+                if variable[0] == variable_id:
+                    return
+                    #raise Exception('variable id already exists')
+                if variable[1][0] == variable_name:
+                    return
+                    #raise Exception('variable name already exists')
+            
+            target['variables'][variable_id] = [variable_name, variable_value] # add variable to stage
+
+            return
+    
+    raise Exception('stage could not be found (required for a global variable)')
 

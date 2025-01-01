@@ -3,9 +3,9 @@ from blocks import *
 
 # https://github.com/TurboWarp/extensions/blob/e4f51517be435cd92a0108eb206876a2fe100890/extensions/NOname-awa/graphics2d.js
 
-def translate_block(target, block_id):
+def translate_block(project_data, target_index, block_id):
     """Translate a single block"""
-
+    target = project_data['targets'][target_index]
     block = target['blocks'][block_id]
     inputs = block['inputs']
 

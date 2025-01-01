@@ -3,9 +3,9 @@ from blocks import *
 
 # https://github.com/TurboWarp/extensions/blob/292032fcfdbe914dc58a00712f42ab1fc4ac04ca/extensions/NOname-awa/more-comparisons.js
 
-def translate_block(target, block_id):
+def translate_block(project_data, target_index, block_id):
     """Translate a single block"""
-
+    target = project_data['targets'][target_index]
     block = target['blocks'][block_id]
     inputs = block['inputs']
 

@@ -32,7 +32,7 @@ project_data = json.loads(project_archive.read('project.json'))
 # list of extensions in project
 print(project_data['extensions'])
 
-for target in project_data['targets']:
+for i, target in enumerate(project_data['targets']):
 
     template_procedures = []
 
@@ -41,6 +41,9 @@ for target in project_data['targets']:
         if block_id not in target['blocks']: continue # skip deleted blocks
 
         block = target['blocks'][block_id]
+
+        if isinstance(block, list): continue # variable or list reporter
+
         opcode = block['opcode']
 
         opcode_namespace = opcode.split('_')[0] # it seems scratch just calls this id
@@ -69,7 +72,7 @@ for target in project_data['targets']:
             continue # allowed natively supported extensions
         
         if opcode_namespace in EXTENSIONS:
-            EXTENSIONS[opcode_namespace].translate_block(target, block_id)
+            EXTENSIONS[opcode_namespace].translate_block(project_data, i, block_id)
         else:
             print(f'namespace unrecognised: {opcode}')
 
