@@ -3,22 +3,16 @@
 
 __pycache__
 
-# images converted to text and back
+# For development
 projects/
-
-# test
 test*.py
 dump.json
 dump.sb3
 
-# Excel temp file
+# MS Excel
 ~$ops.xlsx
 
-# Rhino backup
+# Rhinoceros 3D
 *.3dmbak
-
-# Rhino lock file
 *.3dm.rhl
-
-# Rhino dump
 *.dmp
