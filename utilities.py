@@ -63,21 +63,30 @@ def replace_and_insert_blocks(target:dict, root_block:blocks.Block, root_block_i
 
 
 
+def make_not_topLevel(block:dict):
+    """Set `topLevel` to false and delete x and y coordinates if they exist"""
+    if isinstance(block, list):
+        kept_inputs = block[:3] # 12, name, id
+        block.clear()
+        block.extend(kept_inputs)
+    else:
+        block['topLevel'] = False
+        block.pop('x', None)
+        block.pop('y', None)
+
+
+
 def connect_stack_blocks(target, block_id_parent, block_id_current, block_id_next):
-    """Set next and parent of 2 blocks"""
+    """Set next and parent of 2 blocks. Parent and next are allowed to be `None`."""
     if block_id_parent is not None:
         target['blocks'][block_id_parent]['next'] = block_id_current
-        
-        target['blocks'][block_id_current]['topLevel'] = False
-        target['blocks'][block_id_current].pop('x', None)
-        target['blocks'][block_id_current].pop('y', None)
+        make_not_topLevel(target['blocks'][block_id_current])
     
     target['blocks'][block_id_current]['parent'] = block_id_parent
     target['blocks'][block_id_current]['next'] = block_id_next
     
     if block_id_next is not None:
         target['blocks'][block_id_next]['parent'] = block_id_current
-
 
 
 
@@ -105,9 +114,7 @@ def remove_constant_block(target:dict, block_id:str, value):
             else:
                 replace_and_insert_blocks(target, blocks.OperatorJoin(blocks.InputText(value),blocks.InputText('')), input_block_id)
             target['blocks'][input_block_id]['parent'] = parent_block_id
-            target['blocks'][input_block_id]['topLevel'] = False
-            target['blocks'][input_block_id].pop('x')
-            target['blocks'][input_block_id].pop('y')
+            make_not_topLevel(target['blocks'][input_block_id])
             parsed_input.block = input_block_id
 
         parsed_input.block = None # remove reference to block
@@ -132,7 +139,11 @@ def remove_passthrough_block(target:dict, block_id:str, child_block_id:str):
     parent_block_id = target['blocks'][block_id]['parent']
     
     if parent_block_id is None: # there was no parent block, assign child as new parent
-        if child_block_id is not None:
+        if isinstance(child_block_id, list): # var or list reporter
+            block = target['blocks'][block_id]
+            target['blocks'][block_id] = child_block_id + [block['x'], block['y']]
+            return
+        elif child_block_id is not None:
             target['blocks'][child_block_id]['parent'] = None
         target['blocks'].pop(block_id)
         return 

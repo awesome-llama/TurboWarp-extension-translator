@@ -490,6 +490,13 @@ class OperatorMathOp(Block):
         self.add_field('OPERATOR', op)
         self.add_input(InputNumber, 'NUM', num)
 
+class OperatorRandom(Block):
+    def __init__(self, a:InputNumber, b:InputNumber):
+        super().__init__()
+        self.opcode = 'operator_random'
+        self.add_input(InputNumber, 'FROM', a)
+        self.add_input(InputNumber, 'TO', b)
+
 
 class DataSetVariableTo(Block):
     def __init__(self, variable_name:str, variable_id:str, value:InputText):

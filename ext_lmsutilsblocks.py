@@ -29,10 +29,17 @@ def translate_block(project_data, target_index, block_id):
             
             key_option = InputText.from_list(inputs['KEY_OPTION'])
             if key_option.block is not None: 
-                print('could not convert lmsutilsblocks_whenKeyString, reporter can not be placed in key option field')
-                return
-            
-            replace_and_insert_helper(EventWhenKeyPressed(str(key_option.shadow_value)))
+                # the key option is now in an if block under the hat
+                replace_and_insert_helper(EventWhenKeyPressed('any'))
+                new_block_id = utils.random_id('new_')
+                new_blocks = ControlIf(
+                    InputBoolean(block=SensingKeyPressed(InputReporter(SensingKeyOptions(str(key_option.shadow_value)), block=key_option.block))),
+                    InputStack(block=block['next'])
+                )
+                utils.replace_and_insert_blocks(target, new_blocks, new_block_id)
+                utils.connect_stack_blocks(target, block_id, new_block_id, None)
+            else:
+                replace_and_insert_helper(EventWhenKeyPressed(str(key_option.shadow_value)))
 
         case 'lmsutilsblocks_keyStringPressed':
             # key press boolean reporter
@@ -45,7 +52,9 @@ def translate_block(project_data, target_index, block_id):
             
             input1 = InputReporter.from_list(inputs['TRUEFALSE'])
             if input1.block is not None:
-                print('cannot remove necessary cast') # TODO: investigate json hacking
+                print('lmsutilsblocks_trueFalseBoolean: cannot remove necessary cast') 
+                # scratch doesn't provide an easy way to cast
+                # either a list is needed or 2 custom blocks with a swapped parameter
                 return
 
             truefalse_menu_block = target['blocks'][input1.shadow_value]
@@ -57,9 +66,14 @@ def translate_block(project_data, target_index, block_id):
                 replace_and_insert_helper(OperatorNot(InputBoolean()))
             elif truefalse == 'false':
                 utils.remove_constant_block(target, block_id, 0)
+            elif truefalse == 'random':
+                replace_and_insert_helper(OperatorEquals(
+                    InputText(block=OperatorRandom(InputNumber('0'),InputNumber('1'))),
+                    InputText('1')
+                    ))
             else:
-                pass # random
-
+                print('lmsutilsblocks_trueFalseBoolean: unknown value')
+        
         case 'lmsutilsblocks_menu_trueFalseMenu':
             pass # shadow block, gets removed by parent
 
@@ -158,7 +172,7 @@ def translate_block(project_data, target_index, block_id):
 
         case 'lmsutilsblocks_clampNumber':
             # TODO
-            print('WIP')
+            print('lmsutilsblocks_clampNumber: WIP')
 
         case _:
             print(f'opcode not converted: {block['opcode']}')

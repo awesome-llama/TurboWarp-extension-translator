@@ -25,7 +25,33 @@ def translate_block(project_data, target_index, block_id):
                 )))
 
         case 'RixxyX_color':
-            pass
+            # the block has no function, it just passes through a colour input.
+            
+            input = parse_list(inputs['COLOR'])
+
+            if input.block is None: # if None, the value is a literal
+                parent_block_id = target['blocks'][block_id]['parent']
+                if parent_block_id is None: 
+                    target['blocks'].pop(block_id)
+                    return
+                
+                inputs = target['blocks'][parent_block_id]['inputs']
+                for input_id in list(inputs.keys()):
+                    parsed_input = parse_list(inputs[input_id])
+                    if parsed_input.block == block_id:
+                        parsed_input.block = None
+                        if parsed_input.shadow_enum == 9 or parsed_input.shadow_enum == 10:
+                            parsed_input.shadow_value = input.shadow_value
+                            inputs[input_id] = parsed_input.to_list()
+                        else:
+                            # replace with join block
+                            replace_and_insert_helper(OperatorJoin(InputText(str(input.shadow_value)),InputText('')))
+                            return
+
+                target['blocks'].pop(block_id)
+            else:
+                utils.remove_passthrough_block(target, block_id, input.block)
+
 
         case 'RixxyX_returnTrue':
             replace_and_insert_helper(OperatorNot(InputBoolean()))

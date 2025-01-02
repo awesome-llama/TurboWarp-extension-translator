@@ -72,6 +72,7 @@ def translate_block(project_data, target_index, block_id):
             input_block_id = utils.random_id('new_')
             
             utils.replace_and_insert_blocks(target, OperatorNot(InputBoolean()), input_block_id)
+            target['blocks'][input_block_id]['topLevel'] = False
 
             new_inputs = {'CONDITION': InputBoolean(block=input_block_id).to_list()}
             
