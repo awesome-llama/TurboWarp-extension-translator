@@ -67,9 +67,9 @@ def translate_block(project_data, target_index, block_id):
             elif truefalse == 'false':
                 utils.remove_constant_block(target, block_id, 0)
             elif truefalse == 'random':
-                replace_and_insert_helper(OperatorEquals(
-                    InputText(block=OperatorRandom(InputNumber('0'),InputNumber('1'))),
-                    InputText('1')
+                replace_and_insert_helper(OperatorLessThan(
+                    InputText(block=OperatorRandom(InputNumber('0'),InputNumber('1.0'))),
+                    InputText('0.5')
                     ))
             else:
                 print('lmsutilsblocks_trueFalseBoolean: unknown value')

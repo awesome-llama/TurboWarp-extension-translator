@@ -41,7 +41,7 @@ class Input():
         return self.block is not None
     
     def has_shadow_block(self):
-        """True if a shadow block exists"""
+        """True if a shadow block exists (is referenced to by id)."""
         return self.shadow_enum is None and self.shadow_value is not None
     
     def is_completely_empty(self):
@@ -143,7 +143,7 @@ class InputColor(Input):
         self.block = block
     
     def to_list(self):
-        if re.fullmatch(r"^#[a-fA-F0-9]{6}$", self.value) is None:
+        if re.fullmatch(r"^#[a-fA-F0-9]{6}$", self.shadow_value) is None:
             raise Exception('Not a correctly formatted color')
         return super().to_list()
 

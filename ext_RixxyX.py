@@ -1,7 +1,7 @@
 import utilities as utils
 from blocks import *
 
-# https://github.com/TurboWarp/extensions/blob/c791aef076785b7b6fcb98c7880c26bef368775d/extensions/rixxyx.js#L25
+# https://github.com/TurboWarp/extensions/blob/c791aef076785b7b6fcb98c7880c26bef368775d/extensions/rixxyx.js
 
 COUNTER_NAME = 'RixxyX_counter'
 COUNTER_ID = utils.random_id('var_')
@@ -29,7 +29,10 @@ def translate_block(project_data, target_index, block_id):
             
             input = parse_list(inputs['COLOR'])
 
-            if input.block is None: # if None, the value is a literal
+            if input.has_inserted_block(): 
+                utils.remove_passthrough_block(target, block_id, input.block)
+            
+            else: # if None, the value is a literal
                 parent_block_id = target['blocks'][block_id]['parent']
                 if parent_block_id is None: 
                     target['blocks'].pop(block_id)
@@ -39,18 +42,9 @@ def translate_block(project_data, target_index, block_id):
                 for input_id in list(inputs.keys()):
                     parsed_input = parse_list(inputs[input_id])
                     if parsed_input.block == block_id:
-                        parsed_input.block = None
-                        if parsed_input.shadow_enum == 9 or parsed_input.shadow_enum == 10:
-                            parsed_input.shadow_value = input.shadow_value
-                            inputs[input_id] = parsed_input.to_list()
-                        else:
-                            # replace with join block
-                            replace_and_insert_helper(OperatorJoin(InputText(str(input.shadow_value)),InputText('')))
-                            return
+                        inputs[input_id] = input.to_list()
 
                 target['blocks'].pop(block_id)
-            else:
-                utils.remove_passthrough_block(target, block_id, input.block)
 
 
         case 'RixxyX_returnTrue':

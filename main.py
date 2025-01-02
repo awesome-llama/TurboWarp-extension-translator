@@ -8,8 +8,9 @@ import ext_lmsutilsblocks
 import ext_nkmoremotion
 import ext_nonameawacomparisons
 import ext_nonameawagraph
-import ext_truefantommath
 import ext_RixxyX
+import ext_truefantommath
+import ext_truefantomcouplers
 import ext_utilities
 
 # register extensions:
@@ -19,8 +20,9 @@ EXTENSIONS = {
     'nkmoremotion': ext_nkmoremotion,
     'nonameawacomparisons': ext_nonameawacomparisons,
     'nonameawagraph': ext_nonameawagraph,
-    'truefantommath': ext_truefantommath,
     'RixxyX': ext_RixxyX,
+    'truefantommath': ext_truefantommath,
+    'truefantomcouplers': ext_truefantomcouplers,
     'utilities': ext_utilities,
 }
 

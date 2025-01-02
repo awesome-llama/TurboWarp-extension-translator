@@ -145,6 +145,9 @@ def remove_passthrough_block(target:dict, block_id:str, child_block_id:str):
             return
         elif child_block_id is not None:
             target['blocks'][child_block_id]['parent'] = None
+            target['blocks'][child_block_id]['topLevel'] = target['blocks'][block_id]['topLevel']
+            target['blocks'][child_block_id]['x'] = target['blocks'][block_id]['x']
+            target['blocks'][child_block_id]['y'] = target['blocks'][block_id]['y']
         target['blocks'].pop(block_id)
         return 
     
