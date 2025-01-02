@@ -16,6 +16,21 @@ def random_id(prefix='', avoid=None):
 
 
 
+def get_target(project_data, target_name=None):
+    """Get the target's data object from name. Use `None` to get stage."""
+    if target_name is None:
+        for target in project_data['targets']:
+            if target['isStage']:
+                return target
+    else:
+        for target in project_data['targets']:
+            if target['name'] == target_name:
+                return target
+    
+    return None # failed to get target
+
+
+
 def replace_and_insert_blocks(target:dict, root_block:blocks.Block, root_block_id:str):
     """Insert multiple blocks into a target with the first root block replacing the original (if it exists). Accepts a root block (that may be a stack block or reporter) with inputs containing nested reporter block objects."""
 

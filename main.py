@@ -4,6 +4,7 @@ import utilities as utils
 from blocks import *
 
 import ext_lmscomments
+import ext_lmsData
 import ext_lmsutilsblocks
 import ext_nkmoremotion
 import ext_nonameawacomparisons
@@ -16,6 +17,7 @@ import ext_utilities
 # register extensions:
 EXTENSIONS = {
     'lmscomments': ext_lmscomments,
+    'lmsData': ext_lmsData,
     'lmsutilsblocks': ext_lmsutilsblocks,
     'nkmoremotion': ext_nkmoremotion,
     'nonameawacomparisons': ext_nonameawacomparisons,

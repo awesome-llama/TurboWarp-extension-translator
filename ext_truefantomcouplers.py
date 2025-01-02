@@ -35,17 +35,15 @@ def translate_block(project_data, target_index, block_id):
         case 'truefantomcouplers_boolean_block':
             # find the value of the shadow
             
-            input1 = InputReporter.from_list(inputs['MENU'])
-            if input1.block is not None:
-                print('truefantomcouplers_boolean_block: cannot remove necessary cast') 
-                # scratch doesn't provide an easy way to cast
-                # either a list is needed or 2 custom blocks with a swapped parameter
+            input_base = InputReporter.from_list(inputs['MENU'])
+            if input_base.has_inserted_block():
+                print('truefantomcouplers_boolean_block: reporter input unsupported, option must be chosen before runtime') 
                 return
 
-            truefalse_menu_block = target['blocks'][input1.shadow_value]
-            truefalse = truefalse_menu_block['fields']['boolean_menu'][0]
+            menu_block = target['blocks'][input_base.shadow_value]
+            truefalse = menu_block['fields']['boolean_menu'][0]
 
-            utils.delete_children(target, input1.shadow_value)
+            utils.delete_children(target, input_base.shadow_value)
             
             if truefalse == 'true':
                 replace_and_insert_helper(OperatorNot(InputBoolean()))

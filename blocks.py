@@ -513,6 +513,16 @@ class DataChangeVariableBy(Block):
         self.add_input(InputNumber, 'VALUE', value)
 
 
+# 'data_lengthoflist': BlockData('reporter', [Field('LIST', format='list')]),
+
+class DataLengthOfList(Block):
+    def __init__(self, list_name:str, list_id:str):
+        super().__init__()
+        self.opcode = 'data_lengthoflist'
+        self.add_field('LIST', [list_name, list_id])
+
+
+
 class ProceduresCall(Block):
     def __init__(self):
         super().__init__()
