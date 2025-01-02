@@ -268,6 +268,33 @@ def translate_block(project_data, target_index, block_id):
                 InputText('9007199254740991')
             ))))
         
+        case 'truefantommath_is_number_block':
+            replace_and_insert_helper(OperatorEquals(
+                InputText(block=OperatorAdd(
+                    InputNumber.from_list(inputs['A']),
+                    InputNumber(0),
+                )),
+                InputText.from_list(inputs['A']),
+            ))
+
+        case 'truefantommath_is_int_block':
+            replace_and_insert_helper(OperatorEquals(
+                InputText(block=OperatorRound(InputNumber.from_list(inputs['A']))),
+                InputText.from_list(inputs['A']),
+            ))
+
+        case 'truefantommath_is_float_block':
+            # misleading name, only true for non-whole numbers
+            # this code is likely correct but requires confirmation
+            replace_and_insert_helper(OperatorNot(InputBoolean(block=OperatorEquals(
+                InputText(block=OperatorRound(InputNumber.from_list(inputs['A']))),
+                InputText(block=OperatorAdd(
+                    InputNumber.from_list(inputs['A']),
+                    InputNumber(0),
+                )),
+            ))))
+
+
         case _:
             print(f'opcode not converted: {block['opcode']}')
 

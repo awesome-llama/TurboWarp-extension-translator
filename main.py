@@ -60,7 +60,7 @@ for i, target in enumerate(project_data['targets']):
 
         opcode_namespace = opcode.split('_')[0] # it seems scratch just calls this id
 
-        if opcode_namespace in ['motion', 'looks', 'sound', 'event', 'control', 'sensing', 'operator', 'data']: 
+        if opcode_namespace in ['motion', 'looks', 'sound', 'event', 'control', 'sensing', 'operator', 'data', 'matrix', 'note']: 
             continue # these are native blocks
         
         if opcode == 'procedures_definition':

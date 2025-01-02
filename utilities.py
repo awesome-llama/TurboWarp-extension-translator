@@ -196,11 +196,11 @@ def delete_children(target:dict, root_block_id:str, inputs_only=True):
     if parent_block_id is not None:
         if next_block_id not in target['blocks']: # check if the next block still exists (not deleted)
             next_block_id = None
+        
         if target['blocks'][parent_block_id]['next'] == root_block_id:
             target['blocks'][parent_block_id]['next'] = next_block_id
         else:
-            print('TODO: check the inputs')
-            # TODO if the root was an operator, the parent has an input that needs to be updated
+            pass # next is not applicable to point to reporters in a block
 
 
 
