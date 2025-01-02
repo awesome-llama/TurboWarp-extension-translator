@@ -63,6 +63,24 @@ def replace_and_insert_blocks(target:dict, root_block:blocks.Block, root_block_i
 
 
 
+def connect_stack_blocks(target, block_id_parent, block_id_current, block_id_next):
+    """Set next and parent of 2 blocks"""
+    if block_id_parent is not None:
+        target['blocks'][block_id_parent]['next'] = block_id_current
+        
+        target['blocks'][block_id_current]['topLevel'] = False
+        target['blocks'][block_id_current].pop('x', None)
+        target['blocks'][block_id_current].pop('y', None)
+    
+    target['blocks'][block_id_current]['parent'] = block_id_parent
+    target['blocks'][block_id_current]['next'] = block_id_next
+    
+    if block_id_next is not None:
+        target['blocks'][block_id_next]['parent'] = block_id_current
+
+
+
+
 def remove_constant_block(target:dict, block_id:str, value):
     """Remove a block that functioned as a constant and leave behind a literal value (which may be inside a join or add if required). It is expected that this constant block has no inputs/children."""
     
@@ -220,29 +238,38 @@ def get_all_variables(project_data):
 
 
 
-def create_global_variable(project_data, variable_name, variable_value=0, variable_id=None):
-    """Create a global variable if it does not exist."""
+def create_variable(project_data, variable_name, variable_value=0, variable_id=None, sprite=None):
+    """Create a variable if it does not exist. Error if the variable can not be created due to other existing variables. `sprite=None` means create a global variable (internally stored in the stage)."""
 
-    # TODO make this more robust
-    # are duplicate ids allowed? it's best not as the code is simpler
+    if variable_id is None: variable_id = random_id('var_')
 
-    if variable_id is None:
-        variable_id = random_id('var')
+    # check if the id exists
+    # if it does, check for duplicate names, if there are raise exception unless the name and ids match, otherwise do nothing.
+    # otherwise check for duplicate names, raise exception if the name exists in stage if local or in any sprite if global.
+    # create var.
 
-    for target in project_data['targets']:
-        if target['isStage']:
+    def _id_exists():
+        for target in project_data['targets']:
+            for var_id in target['variables'].keys():
+                if var_id == variable_id:
+                    return True
+        return False
 
-            for variable in get_all_variables(project_data):
-                if variable[0] == variable_id:
-                    return
-                    #raise Exception('variable id already exists')
-                if variable[1][0] == variable_name:
-                    return
-                    #raise Exception('variable name already exists')
-            
-            target['variables'][variable_id] = [variable_name, variable_value] # add variable to stage
+    if _id_exists(): return
+    # TODO check for duplicate names
 
-            return
+    if sprite is None:
+        for target in project_data['targets']:
+            if target['isStage']:
+                target['variables'][variable_id] = [variable_name, variable_value] # add variable to stage
+                return
+        raise Exception('no stage found')
+    else:
+        for target in project_data['targets']:
+            if target['name'] == sprite:
+                target['variables'][variable_id] = [variable_name, variable_value] # add variable to stage
+                return
+        raise Exception('no sprite of requested name found')
     
-    raise Exception('stage could not be found (required for a global variable)')
 
+    

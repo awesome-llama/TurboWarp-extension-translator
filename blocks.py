@@ -366,7 +366,7 @@ class ControlIf(Block):
 class ControlIfElse(Block):
     def __init__(self, condition:InputBoolean, substack_true:InputStack, substack_false:InputStack):
         super().__init__()
-        self.opcode = 'control_if'
+        self.opcode = 'control_if_else'
         self.add_input(InputBoolean, 'CONDITION', condition)
         self.add_input(InputStack, 'SUBSTACK', substack_true)
         self.add_input(InputStack, 'SUBSTACK2', substack_false)

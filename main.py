@@ -32,6 +32,16 @@ project_data = json.loads(project_archive.read('project.json'))
 # list of extensions in project
 print(project_data['extensions'])
 
+# validate variables
+# it is assumed ids are always unique, even when the same local var is used in different sprites
+variable_ids = set()
+for target in project_data['targets']:
+    for item in target['variables'].items():
+        if item[0] in variable_ids:
+            raise Exception('Project variables invalid, same id is used multiple times')
+        variable_ids.add(item[0])
+
+
 for i, target in enumerate(project_data['targets']):
 
     template_procedures = []

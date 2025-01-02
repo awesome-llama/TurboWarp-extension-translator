@@ -1,6 +1,8 @@
 import utilities as utils
 from blocks import *
 
+# https://github.com/TurboWarp/extensions/blob/c791aef076785b7b6fcb98c7880c26bef368775d/extensions/NexusKitten/moremotion.js
+
 STEP_DIST_NAME = 'nkmoremotion_steptowards_ratio'
 STEP_DIST_ID = utils.random_id('var_')
 
@@ -87,18 +89,47 @@ def translate_block(project_data, target_index, block_id):
         
         case 'nkmoremotion_steptowards':
             # it only makes sense to create a variable for this
-
-            #utils.create_global_variable(project_data, STEP_DIST_NAME, 0, STEP_DIST_ID)
-            #new_blocks = DataChangeVariableBy(COUNTER_NAME, COUNTER_ID, InputNumber.from_list(inputs['NUM']))
-            #new_blocks.copy_next(block)
-            #replace_and_insert_helper(new_blocks)
-
-
-            #new_blocks = ControlIf(Operator)
-
-            #new_blocks.copy_next(block)
-            #replace_and_insert_helper(new_blocks)
-            pass
+            utils.create_variable(project_data, STEP_DIST_NAME, 0, STEP_DIST_ID, target['name'])
+            replace_and_insert_helper(DataSetVariableTo(STEP_DIST_NAME, STEP_DIST_ID, InputText(block=OperatorDivide(
+                InputNumber.from_list(inputs['STEPS']),
+                InputNumber(block=_dist_from_sprite()),
+            ))))
+            
+            new_block_id = utils.random_id('new_')
+            new_blocks = ControlIfElse(
+                InputBoolean(OperatorLessThan(
+                    InputText(block=[12, STEP_DIST_NAME, STEP_DIST_ID]),
+                    InputText(1),
+                )),
+                InputStack(block=MotionGoToXY(
+                    InputNumber(block=OperatorAdd(
+                        InputNumber(block=MotionXPosition()),
+                        InputNumber(block=OperatorMultiply(
+                            InputNumber(block=[12, STEP_DIST_NAME, STEP_DIST_ID]),
+                            InputNumber(block=OperatorSubtract(
+                                InputNumber.from_list(inputs['X']),
+                                InputNumber(block=MotionXPosition()),
+                            )),
+                        )),
+                    )),
+                    InputNumber(block=OperatorAdd(
+                        InputNumber(block=MotionYPosition()),
+                        InputNumber(block=OperatorMultiply(
+                            InputNumber(block=[12, STEP_DIST_NAME, STEP_DIST_ID]),
+                            InputNumber(block=OperatorSubtract(
+                                InputNumber.from_list(inputs['Y']),
+                                InputNumber(block=MotionYPosition()),
+                            )),
+                        )),
+                    )),
+                )),
+                InputStack(block=MotionGoToXY(
+                    InputNumber.from_list(inputs['X']), # too close, go to destination
+                    InputNumber.from_list(inputs['Y']),
+                )))
+            
+            utils.replace_and_insert_blocks(target, new_blocks, new_block_id)
+            utils.connect_stack_blocks(target, block_id, new_block_id, block['next'])
             
 
         case 'nkmoremotion_tweentowards':

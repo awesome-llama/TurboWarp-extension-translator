@@ -53,11 +53,11 @@ def translate_block(project_data, target_index, block_id):
                 target['blocks'].pop(block_id) # delete this block as it's no longer needed
             
         case 'RixxyX_incrementCountByNum':
-            utils.create_global_variable(project_data, COUNTER_NAME, 0, COUNTER_ID)
+            utils.create_variable(project_data, COUNTER_NAME, 0, COUNTER_ID)
             replace_and_insert_helper(DataChangeVariableBy(COUNTER_NAME, COUNTER_ID, InputNumber.from_list(inputs['NUM'])))
 
         case 'RixxyX_decrementCountByNum':
-            utils.create_global_variable(project_data, COUNTER_NAME, 0, COUNTER_ID)
+            utils.create_variable(project_data, COUNTER_NAME, 0, COUNTER_ID)
             parsed_input = InputNumber.from_list(inputs['NUM'])
             if parsed_input.block is None: # literal can be used by itself, no subtract block needed
                 parsed_input = InputNumber(-float(parsed_input.shadow_value))
@@ -67,7 +67,7 @@ def translate_block(project_data, target_index, block_id):
             replace_and_insert_helper(new_blocks)
 
         case 'RixxyX_setCount':
-            utils.create_global_variable(project_data, COUNTER_NAME, 0, COUNTER_ID)
+            utils.create_variable(project_data, COUNTER_NAME, 0, COUNTER_ID)
             replace_and_insert_helper(DataSetVariableTo(COUNTER_NAME, COUNTER_ID, InputText.from_list(inputs['NUM'])))
 
         case 'RixxyX_isJsNan':
