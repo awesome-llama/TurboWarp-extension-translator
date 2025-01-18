@@ -19,7 +19,7 @@ def translate_block(project_data, target_index, block_id):
             replace_and_insert_helper(EventWhenGreaterThan(
                 'TIMER',
                 InputNumber(block=OperatorDivide(
-                    InputNumber.from_list(inputs['INPUT']),
+                    InputNumber.from_list(inputs.get('INPUT', None)),
                     InputNumber('-0'),
                 )),
             ))

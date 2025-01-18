@@ -4,10 +4,12 @@
 __pycache__
 
 # For development
-projects/
+test_projects/
 test*.py
 dump.json
 dump.sb3
+project.json
+project.sb3
 
 # MS Excel
 ~$ops.xlsx
